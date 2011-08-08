@@ -1,0 +1,2 @@
+#define BEACON_RATE 5
+#define SEQ_INTERVAL 60
