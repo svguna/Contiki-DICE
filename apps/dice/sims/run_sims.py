@@ -3,7 +3,7 @@ from produce_trace import produce_trace
 from re import sub
 
 node_distances = [8, 15, 30]
-num_swaps = [0, 5 10]
+num_swaps = [0, 5, 10]
 dist_swaps = [10, 50, 100]
 repetitions = range(0, 64)
 
