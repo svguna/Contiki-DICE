@@ -2,8 +2,9 @@
 #define __DICE_H
 #include "rime.h"
 
-#define LV_ENTRIES 2
+#define LV_ENTRIES 4
 #define LV_DROPS 5
+#define signature_ENTRIES 5
 
 // 1s = 128 clock ticks, hence the following is about 23ms
 #define TSYNC_ACCURACY 3
@@ -23,6 +24,7 @@
 
 struct view_entry {
     uint16_t val;
+    uint16_t attr;
     clock_time_t ts;
     rimeaddr_t src;
 };
@@ -41,6 +43,26 @@ struct dice_view {
     view_drop_t drops[LV_DROPS];
 };
 typedef struct dice_view dice_view_t;
+
+
+enum {
+    OBJ_MAXIMIZE,
+    OBJ_MINIMIZE
+};
+
+struct signature_entry {
+    uint16_t attr;
+    uint8_t objective;
+    uint8_t slice_size;
+};
+typedef struct signature_entry signature_entry_t;
+
+
+struct signature {
+    uint16_t entries_no;
+    signature_entry_t entries[signature_ENTRIES];
+};
+typedef struct signature signature_t;
 
 void print_entry(char *buf, view_entry_t *entry);
 void print_entry_msg(char *msg, view_entry_t *entry);

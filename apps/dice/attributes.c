@@ -20,6 +20,7 @@ static void attributes_refresh(void *data)
     attribute_initialized = 1;
     entry.ts = clock_time();
     entry.val = attribute_value = random_rand() % 100;
+    entry.attr = 1;
     memcpy(&entry.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
     
     print_entry_msg("attribute refresh ", &entry);

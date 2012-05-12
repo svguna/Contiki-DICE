@@ -62,7 +62,7 @@ static void flush_overflow()
                 continue;
         }
         if ((now >= tts && now - tts < TSYNC_OVERFLOW) ||
-                tts > now && tts - now > TSYNC_MAX - TSYNC_OVERFLOW) {
+                (tts > now && tts - now > TSYNC_MAX - TSYNC_OVERFLOW)) {
             i++;
             continue;
         }
@@ -146,7 +146,7 @@ static void build_view(clock_time_t ts)
         if (history[i].type != HE_ENTRY || ts_after(ts, entry->ts) ||
                 drop_exists(&entry->src, entry->ts, ts)) 
             continue;
-        push_entry_targetted(entries, entry);
+        push_to_all_slices(entry, entries);
     }
 
     print_entries_msg("history view ",  entries);
