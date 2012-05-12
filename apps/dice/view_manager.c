@@ -234,8 +234,7 @@ int merge_view(dice_view_t *other)
     for (i = 0; i < LV_DROPS; i++) {
         if (other->drops[i].ts == 0 || 
                 rimeaddr_cmp(&other->drops[i].src, &rimeaddr_node_addr) || 
-                other->drops[i].ts > now || other->drops[i].src.u8[1] != 0 || 
-                other->drops[i].src.u8[1] > MAX_NODES) 
+                other->drops[i].ts > now ) 
             continue;
         push_drop(other->drops + i);
     }
@@ -243,9 +242,7 @@ int merge_view(dice_view_t *other)
         for (i = 0; i < LV_ENTRIES; i++) {
             if (other->entries[i].ts == 0 ||
                     rimeaddr_cmp(&other->entries[i].src, &rimeaddr_node_addr) ||
-                    other->entries[i].ts > now || 
-                    other->entries[i].src.u8[1] != 0 || 
-                    other->entries[i].src.u8[0] > MAX_NODES)
+                    other->entries[i].ts > now )
                 continue;
             push_entry(other->entries + i);
         }

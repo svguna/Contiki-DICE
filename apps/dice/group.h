@@ -1,6 +1,8 @@
 #ifndef __GROUP_H
 #define __GROUP_H
 
+#include "net/rime.h"
+
 #define MAX_NODES 25
 #define GROUP_CHANNEL 130
 

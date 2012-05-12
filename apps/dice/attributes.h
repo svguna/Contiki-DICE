@@ -1,7 +1,7 @@
 #ifndef __ATTRIBUTES_H
 #define __ATTRIBUTES_H
 
-#define ATTRIBUTE_REFRESH 2
+#define ATTRIBUTE_REFRESH 120
 
 extern uint16_t attribute_value;
 extern int attribute_initialized;

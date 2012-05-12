@@ -9,12 +9,12 @@
 #include "view_manager.h"
 #include "group.h"
 
-static void breceive(struct broadcast_conn *c, rimeaddr_t *from);
+static void breceive(struct broadcast_conn *c);
 static void bsend(void *data);
 
 
-static struct broadcast_callbacks bcalls = {breceive};
-static struct broadcast_conn bconn;
+static struct abc_callbacks bcalls = {breceive};
+static struct abc_conn bconn;
 static struct ctimer bcast_timer;
 static int initialized = 0;
 static int redundant_cnt = 0;
@@ -23,6 +23,7 @@ static clock_time_t last_bcast = 0;
 clock_time_t tau;
 
 struct dice_pkt {
+    rimeaddr_t src;
     clock_time_t timestamp;
     dice_view_t view;
 };
@@ -75,12 +76,15 @@ static void bsend(void *data)
         redundant_cnt = 0;
         return;
     }
-    
+   
+    memcpy(&pkt.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
     pkt.timestamp = clock_time();
     memcpy(&pkt.view, &local_view, sizeof(dice_view_t));
 
     packetbuf_copyfrom(&pkt, sizeof(drickle_pkt_t));
-    broadcast_send(&bconn);
+    
+    print_view_msg("send view ", &pkt.view);
+    abc_send(&bconn);
     printf("view sent\n");
 }
 
@@ -124,10 +128,12 @@ static void update_timestamps(drickle_pkt_t *pkt)
 }
 
 
-static void breceive(struct broadcast_conn *c, rimeaddr_t *from)
+static void breceive(struct broadcast_conn *c)
 {
     drickle_pkt_t *pkt = (drickle_pkt_t *) packetbuf_dataptr();
+    rimeaddr_t *from = &pkt->src;
     
+    print_view_msg("received view ", &pkt->view);
     printf("received view %d.%d\n", from->u8[1], from->u8[0]);
     if (!groupmon_isalive(from))
         groupmon_forceupdate(from);
@@ -139,7 +145,7 @@ static void breceive(struct broadcast_conn *c, rimeaddr_t *from)
 
 void drickle_init()
 {
-    broadcast_open(&bconn, DRICKLE_CHANNEL, &bcalls);
+    abc_open(&bconn, DRICKLE_CHANNEL, &bcalls);
     drickle_reset();
     initialized = 1;
 }
