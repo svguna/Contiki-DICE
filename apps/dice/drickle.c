@@ -130,15 +130,18 @@ static void update_timestamps(drickle_pkt_t *pkt)
 
 static void breceive(struct broadcast_conn *c)
 {
-    drickle_pkt_t *pkt = (drickle_pkt_t *) packetbuf_dataptr();
-    rimeaddr_t *from = &pkt->src;
+    drickle_pkt_t pkt;
+    rimeaddr_t *from;
     
-    print_view_msg("received view ", &pkt->view);
+    memcpy(&pkt, packetbuf_dataptr(), sizeof(drickle_pkt_t));;
+    from = &pkt.src;
+    
+    print_view_msg("received view ", &pkt.view);
     printf("received view %d.%d\n", from->u8[1], from->u8[0]);
     if (!groupmon_isalive(from))
         groupmon_forceupdate(from);
-    update_timestamps(pkt);
-    if (!merge_view(&pkt->view))
+    update_timestamps(&pkt);
+    if (!merge_view(&pkt.view))
         redundant_cnt++;
 }
 
