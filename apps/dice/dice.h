@@ -4,7 +4,12 @@
 
 #define LV_ENTRIES 4
 #define LV_DROPS 5
-#define signature_ENTRIES 5
+#define SIGNATURE_ENTRIES 5
+
+#define MAX_QUANTIFIERS 5
+#define MAX_ATTRIBUTES 5
+#define MAX_INV_NODES 15
+#define MAX_STACK_SIZE 20
 
 // 1s = 128 clock ticks, hence the following is about 23ms
 #define TSYNC_ACCURACY 3
@@ -50,6 +55,13 @@ enum {
     OBJ_MINIMIZE
 };
 
+enum {
+    BOOL,
+    OPERATOR,
+    INT,
+    ATTRIBUTE
+};
+
 struct signature_entry {
     uint16_t attr;
     uint8_t objective;
@@ -60,7 +72,7 @@ typedef struct signature_entry signature_entry_t;
 
 struct signature {
     uint16_t entries_no;
-    signature_entry_t entries[signature_ENTRIES];
+    signature_entry_t entries[SIGNATURE_ENTRIES];
 };
 typedef struct signature signature_t;
 
