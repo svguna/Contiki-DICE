@@ -345,12 +345,9 @@ int prune_view(clock_time_t ts)
 
 void view_manager_init()
 {
-    signature.entries_no = 2;
+    signature.entries_no = 1;
     signature.entries[0].attr = 1;
     signature.entries[0].objective = OBJ_MAXIMIZE;
     signature.entries[0].slice_size = 2;
-    signature.entries[1].attr = 1;
-    signature.entries[1].objective = OBJ_MINIMIZE;
-    signature.entries[1].slice_size = 2;
 }
 

@@ -3,6 +3,7 @@
 #include "dice.h"
 #include "history.h"
 #include "view_manager.h"
+#include "invariant.h"
 
 enum {
     HE_ENTRY,
@@ -135,9 +136,9 @@ static void build_view(clock_time_t ts)
 {
     int i;
     view_entry_t entries[LV_ENTRIES];
+    inv_node_t result;
 
     memset(&entries, 0, sizeof(view_entry_t) * LV_ENTRIES);
-    printf("building history view at %u\n", ts);
 
     for (i = 0; i < history_size; i++) {
         view_entry_t *entry = &history[i].data.entry;
@@ -150,6 +151,14 @@ static void build_view(clock_time_t ts)
     }
 
     print_entries_msg("history view ",  entries);
+    if (evaluate(entries, &result)) {
+        printf("no eval!!!\n");
+        return;
+    }
+    if (result.data.value)
+        printf("invariant complied with!\n");
+    else
+        printf("invariant violated\n");
 }
 
 
