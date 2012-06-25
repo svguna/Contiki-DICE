@@ -5,6 +5,7 @@
 #define LV_ENTRIES 4
 #define LV_DROPS 5
 #define SIGNATURE_ENTRIES 5
+#define LV_CONJS 3
 
 #define MAX_QUANTIFIERS 5
 #define MAX_ATTRIBUTES 5
@@ -43,11 +44,26 @@ struct view_drop {
 typedef struct view_drop view_drop_t;
 
 
+struct view_conj {
+    uint8_t flagged[MAX_QUANTIFIERS];
+    rimeaddr_t src[MAX_QUANTIFIERS];
+    clock_time_t ts[MAX_QUANTIFIERS];
+};
+typedef struct view_conj view_conj_t;
+
 struct dice_view {
     view_entry_t entries[LV_ENTRIES];
     view_drop_t drops[LV_DROPS];
 };
 typedef struct dice_view dice_view_t;
+
+struct dice_view_t1 {
+    view_conj_t conjs[LV_CONJS];
+    view_drop_t drops[LV_DROPS];
+};
+typedef struct dice_view_t1 dice_view_t1_t;
+
+
 
 
 enum {
@@ -82,6 +98,8 @@ void print_drop(char *buf, view_drop_t *drop);
 void print_view(char *buf, dice_view_t *view);
 void print_entries_msg(char *msg, view_entry_t entries[LV_ENTRIES]);
 void print_view_msg(char *msg, dice_view_t *view);
+void print_viewt1_msg(char *msg, dice_view_t1_t *view);
+void print_conjs_msg(char *msg, view_conj_t *conjs);
 
 
 #endif

@@ -8,8 +8,10 @@
 #include "drickle.h"
 #include "group.h"
 #include "history.h"
+#include "evaluation_manager.h"
 
 dice_view_t local_view;
+dice_view_t1_t local_view_t1;
 signature_t signature;
 
 
@@ -36,31 +38,30 @@ static void shift_right(view_entry_t entries[LV_ENTRIES], int idx, int max)
 }
 
 
-static int push_drop(view_drop_t *drop)
+static int push_drop(view_drop_t drops[LV_DROPS], view_drop_t *drop)
 {
     int i, to_insert = -1, oldest_idx = -1;
     clock_time_t oldest_ts = 0;
 
     for (i = 0; i < LV_DROPS; i++) {
-        if (!rimeaddr_cmp(&local_view.drops[i].src, &drop->src))
+        if (!rimeaddr_cmp(&drops[i].src, &drop->src))
             continue;
-        if (!ts_after_synch(local_view.drops[i].ts, drop->ts))
+        if (!ts_after_synch(drops[i].ts, drop->ts))
             return 0;
-        local_view.drops[i].ts = drop->ts;
-        history_push_drop(drop);
+        drops[i].ts = drop->ts;
         return 1;
     }
 
     for (i = 0; i < LV_DROPS; i++) {
-        if (local_view.drops[i].ts == 0) {
+        if (drops[i].ts == 0) {
             to_insert = i;
             break;
         }
         // Here's fine if we don't ajust for time synch accuracy since all we
         // care about is the oldest entry in the history buffer.
-        if (oldest_idx == -1 || ts_after(local_view.drops[i].ts, oldest_ts)) {
+        if (oldest_idx == -1 || ts_after(drops[i].ts, oldest_ts)) {
             oldest_idx = i;
-            oldest_ts = local_view.drops[i].ts;
+            oldest_ts = drops[i].ts;
         }
     }
 
@@ -71,9 +72,8 @@ static int push_drop(view_drop_t *drop)
         return 0;
     }
 
-    printf("inserted drop %d\n", to_insert);
-    memcpy(local_view.drops + to_insert, drop, sizeof(view_drop_t));
-    history_push_drop(drop);
+    printf("inserted drop %d %d\n", to_insert, drop->ts);
+    memcpy(drops + to_insert, drop, sizeof(view_drop_t));
     return 1;
 }
 
@@ -102,7 +102,8 @@ static int push_existing(view_entry_t *entry, view_entry_t entries[LV_ENTRIES],
         else
             drop.ts = entry->ts;
         memcpy(&drop.src, &entry->src, sizeof(rimeaddr_t));
-        push_drop(&drop);
+        if (push_drop(local_view.drops, &drop))
+            history_push_drop(&drop);
     }
     return 1;
 }
@@ -233,16 +234,19 @@ static int prune_all_obsolete(dice_view_t *other)
 }
 
 
-static int push_local_value()
+static void push_local_values()
 {
     view_entry_t entry;
+    int i;
 
-    if (!attribute_initialized)
-        return 0;
-    entry.ts = clock_time();
-    entry.val = attribute_value;
-    memcpy(&entry.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
-    return push_entry(&entry);
+    for (i = 0; i < local_attribute_no; i++) {
+        uint16_t val;
+        get_attribute(local_attribute_hashes[i], &val);
+        entry.ts = clock_time();
+        entry.val = val;
+        memcpy(&entry.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
+        push_entry(&entry);
+    }
 }
 
 
@@ -286,7 +290,8 @@ int merge_view(dice_view_t *other)
                 rimeaddr_cmp(&other->drops[i].src, &rimeaddr_node_addr) || 
                 other->drops[i].ts > now ) 
             continue;
-        push_drop(other->drops + i);
+        if (push_drop(local_view.drops, other->drops + i))
+            history_push_drop(other->drops + i);
     }
     if (need_update) {
         for (i = 0; i < LV_ENTRIES; i++) {
@@ -296,8 +301,7 @@ int merge_view(dice_view_t *other)
                 continue;
             push_entry(other->entries + i);
         }
-        push_local_value();
-        drickle_reset();
+        push_local_values();
     }
     print_view_msg("after merge ", &local_view);
     printf("need update: %d\n", need_update);
@@ -349,5 +353,171 @@ void view_manager_init()
     signature.entries[0].attr = 1;
     signature.entries[0].objective = OBJ_MAXIMIZE;
     signature.entries[0].slice_size = 2;
+}
+
+
+static int check_disj_update(view_conj_t *updated_conj, view_conj_t *lv_conj)
+{
+    int j, updated = 0;
+
+    for (j = 0; j < MAX_QUANTIFIERS; j++) {
+        int lu = 0;
+        clock_time_t time = clock_time();
+
+        if (updated_conj->flagged[j] == lv_conj->flagged[j])
+            continue;
+
+        if (updated_conj->flagged[j] == 0 && 
+                rimeaddr_cmp(lv_conj->src + j, &rimeaddr_node_addr)) {
+            // moved back to compliance
+            view_drop_t drop;
+            drop.ts = clock_time();
+            // TODO the following is a hack
+            if (lv_conj->ts[j] > drop.ts)
+                drop.ts = lv_conj->ts[j] + 1;
+            memcpy(&drop.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
+            push_drop(local_view_t1.drops, &drop);
+            lu = 1;
+            time = 0;
+        }
+
+        if (updated_conj->flagged[j] != 0)
+            // violated
+            lu = 1;
+
+        if (!lu)
+            continue;
+
+        lv_conj->flagged[j] = updated_conj->flagged[j];
+        memcpy(&lv_conj->src[j], &rimeaddr_node_addr, sizeof(rimeaddr_t));
+        lv_conj->ts[j] = time;
+        updated = 1;
+    }
+
+    return updated;
+}
+
+
+int local_disjunctions_refresh()
+{
+    int i, updated = 0;
+    view_conj_t tmp[LV_CONJS];
+    memset(tmp, 0, sizeof(tmp));
+   
+    evaluate_local_disjunctions(tmp);
+    print_conjs_msg("lc", tmp);
+  
+    for (i = 0; i < disjunctions_no; i++)
+        if (check_disj_update(tmp + i, local_view_t1.conjs + i))
+            updated = 1;
+
+    print_viewt1_msg("T1 ar", &local_view_t1);
+    
+    if (updated)
+        evaluate_disjunctions(local_view_t1.conjs);
+    return updated;
+}
+
+static int compare_conjs(view_conj_t conjs1[LV_CONJS], 
+        view_conj_t conjs2[LV_CONJS])
+{
+    int i, j;
+
+    for (i = 0; i < disjunctions_no; i++)
+        for (j = 0; j < MAX_QUANTIFIERS; j++)
+            if (conjs1[i].flagged[j] != conjs2[i].flagged[j])
+                return 0;
+    return 1;
+}
+
+
+static int prune_obsolete_conj(view_drop_t *drop)
+{
+    int i, j, updated = 0;
+
+    for (i = 0; i < disjunctions_no; i++)
+        for (j = 0; j < MAX_QUANTIFIERS; j++) {
+            if (local_view_t1.conjs[i].ts[j] == 0)
+                continue;
+            if (!rimeaddr_cmp(&local_view_t1.conjs[i].src[j], &drop->src))
+                continue;
+            if (ts_after(drop->ts, local_view_t1.conjs[i].ts[j]))
+                continue;
+            local_view_t1.conjs[i].flagged[j] = 0;
+            local_view_t1.conjs[i].ts[j] = 0;
+            updated = 1;
+        }
+
+    return updated;
+}
+
+
+static int prune_all_obsolete_conjs(clock_time_t now, dice_view_t1_t *other)
+{
+    int i, need_update = 0;
+
+    for (i = 0; i < LV_DROPS; i++) {
+        if (other->drops[i].ts == 0)
+            continue;
+        if (rimeaddr_cmp(&other->drops[i].src, &rimeaddr_node_addr))
+            continue;
+        if (other->drops[i].ts > now)
+            continue;
+        if (prune_obsolete_conj(other->drops + i))
+            need_update = 1;
+        push_drop(local_view_t1.drops, other->drops + i);
+    }
+    return need_update;
+}
+
+
+static int push_other_disjunctions(clock_time_t now, dice_view_t1_t *other)
+{
+    int i, j, updated = 0;
+    
+    for (i = 0; i < disjunctions_no; i++) 
+        for (j = 0; j < MAX_QUANTIFIERS; j++) {
+            if (other->conjs[i].ts[j] == 0 ||
+                    other->conjs[i].flagged[j] == 0)
+                continue;
+            if (rimeaddr_cmp(&other->conjs[i].src[j], &rimeaddr_node_addr) &&
+                    !rimeaddr_cmp(&local_view_t1.conjs[i].src[j], 
+                        &rimeaddr_node_addr)) {
+                view_drop_t drop;
+                drop.ts = now;
+                memcpy(&drop.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
+                push_drop(local_view_t1.drops, &drop);
+                updated = 1;
+                continue;
+            }
+            local_view_t1.conjs[i].flagged[j] = 1;
+            memcpy(&local_view_t1.conjs[i].src[j], &other->conjs[i].src[j], 
+                    sizeof(rimeaddr_t));
+            updated = 1;
+        }
+    return updated;
+}
+
+int merge_disjunctions(dice_view_t1_t *other)
+{
+    int need_update;
+    clock_time_t now = clock_time();
+    
+    print_viewt1_msg("T1 bm", &local_view_t1);
+    print_viewt1_msg("T1 mw", other);
+
+    need_update = compare_conjs(local_view_t1.conjs, other->conjs) == 0;
+    printf("t1 nu 1=%d\n", need_update);
+    if (prune_all_obsolete_conjs(now, other))
+        need_update = 1;
+    printf("t1 nu 2=%d\n", need_update);
+    if (need_update) {
+        push_other_disjunctions(now, other);
+        print_viewt1_msg("T1 ap", &local_view_t1);
+        evaluate_local_disjunctions(local_view_t1.conjs);
+        evaluate_disjunctions(local_view_t1.conjs);
+    }
+    print_viewt1_msg("T1 am", &local_view_t1);
+    return need_update;
 }
 

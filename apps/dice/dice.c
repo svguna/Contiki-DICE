@@ -6,6 +6,7 @@
 #include "attributes.h"
 #include "view_manager.h"
 #include "group.h"
+#include "evaluation_manager.h"
 
 PROCESS(dice_main_process, "dice main process");
 AUTOSTART_PROCESSES(&dice_main_process);
@@ -33,6 +34,19 @@ void print_entry(char *buf, view_entry_t *entry)
             entry->src.u8[0], entry->ts);
 }
 
+
+void print_conj(char *buf, view_conj_t *conj)
+{
+    int i;
+    for (i = 0; i < MAX_QUANTIFIERS; i++) {
+        if (conj->ts[i] == 0) 
+            sprintf(buf, "[-]");
+        else
+            sprintf(buf, "[%d.%d(%u)]", conj->src[i].u8[1], conj->src[i].u8[0], 
+                    conj->ts[i]);
+        buf = buf + strlen(buf);
+    }
+}
 
 
 void print_entry_msg(char *msg, view_entry_t *entry)
@@ -72,6 +86,24 @@ static void print_entries(char *buf, view_entry_t entries[LV_ENTRIES])
 }
 
 
+static void print_conjs(char *buf, view_conj_t conjs[LV_CONJS])
+{
+    int i;
+
+    sprintf(buf, "<");
+    buf = buf + strlen(buf);
+    for (i = 0; i < disjunctions_no; i++) {
+        print_conj(buf, conjs + i);
+        buf = buf + strlen(buf);
+        if (i < disjunctions_no - 1) {
+            sprintf(buf, ",");
+            buf = buf + strlen(buf);
+        }
+    }
+    sprintf(buf, ">");
+}
+
+
 void print_view(char *buf, dice_view_t *view)
 {
     int i;
@@ -92,6 +124,36 @@ void print_view(char *buf, dice_view_t *view)
 }
 
 
+void print_viewt1(char *buf, dice_view_t1_t *view)
+{
+    int i;
+   
+    print_conjs(buf, view->conjs);
+    buf = buf + strlen(buf);
+    sprintf(buf, "[");
+    buf = buf + strlen(buf);
+    for (i = 0; i < LV_DROPS; i++) {
+        print_drop(buf, view->drops + i);
+        buf = buf + strlen(buf);
+        if (i < LV_DROPS - 1) {
+            sprintf(buf, ",");
+            buf = buf + strlen(buf);
+        }
+    }
+    sprintf(buf, "]");
+}
+
+
+void print_conjs_msg(char *msg, view_conj_t conjs[LV_CONJS])
+{
+    char data[196];
+    memcpy(data, msg, strlen(msg));
+   
+    print_conjs(data + strlen(msg), conjs);
+    printf("%s\n", data);
+}
+
+
 void print_view_msg(char *msg, dice_view_t *view)
 {
     char buf[196];
@@ -100,6 +162,14 @@ void print_view_msg(char *msg, dice_view_t *view)
     printf("%s\n", buf);
 }
 
+
+void print_viewt1_msg(char *msg, dice_view_t1_t *view)
+{
+    char buf[196];
+    memcpy(buf, msg, strlen(msg));
+    print_viewt1(buf + strlen(msg), view);
+    printf("%s\n", buf);
+}
 
 
 void print_entries_msg(char *msg, view_entry_t entries[LV_ENTRIES])

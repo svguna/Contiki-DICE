@@ -8,6 +8,7 @@
 #include "drickle.h"
 #include "view_manager.h"
 #include "group.h"
+#include "evaluation_manager.h"
 
 static void breceive(struct broadcast_conn *c);
 static void bsend(void *data);
@@ -25,7 +26,11 @@ clock_time_t tau;
 struct dice_pkt {
     rimeaddr_t src;
     clock_time_t timestamp;
-    dice_view_t view;
+    uint16_t type;
+    union {
+        dice_view_t data;
+        dice_view_t1_t data_t1;
+    } view;
 };
 typedef struct dice_pkt drickle_pkt_t;
 
@@ -51,15 +56,41 @@ static void increase_timer()
     tau *= 2;
     if (tau > TRICKLE_HIGH)
         tau = TRICKLE_HIGH;
-    printf("tau is %u\n", tau);
     t = tau / 2 + (random_rand() % (tau / 2));
     ctimer_set(&bcast_timer, t, &bsend, NULL);
 }
 
 
-static void bsend(void *data)
+static void bsend_t1()
 {
     drickle_pkt_t pkt;
+    
+    memcpy(&pkt.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
+    pkt.timestamp = clock_time();
+    pkt.type = 1;
+    memcpy(&pkt.view, &local_view_t1, sizeof(dice_view_t1_t));
+    packetbuf_copyfrom(&pkt, sizeof(drickle_pkt_t));
+    print_viewt1_msg("send view 1", &pkt.view.data_t1);
+    abc_send(&bconn);
+}
+
+
+static void bsend_t2()
+{
+    drickle_pkt_t pkt;
+    
+    memcpy(&pkt.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
+    pkt.timestamp = clock_time();
+    pkt.type = 2;
+    memcpy(&pkt.view, &local_view, sizeof(dice_view_t));
+    packetbuf_copyfrom(&pkt, sizeof(drickle_pkt_t));
+    print_view_msg("send view 2", &pkt.view.data);
+    abc_send(&bconn);
+}
+
+
+static void bsend(void *data)
+{
     clock_time_t now = clock_time();
 
     if (now < last_bcast && prune_view(now)) {
@@ -76,16 +107,52 @@ static void bsend(void *data)
         redundant_cnt = 0;
         return;
     }
-   
-    memcpy(&pkt.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));
-    pkt.timestamp = clock_time();
-    memcpy(&pkt.view, &local_view, sizeof(dice_view_t));
 
-    packetbuf_copyfrom(&pkt, sizeof(drickle_pkt_t));
+    bsend_t1();
+//    bsend_t2();
+}
+
+
+static void update_timestamps_t1(drickle_pkt_t *pkt)
+{
+    clock_time_t now = clock_time();
+    clock_time_t delta;
+    int i, j;
+
+    if (now > pkt->timestamp) {
+        delta = now - pkt->timestamp;
+        for (i = 0; i < disjunctions_no; i++) {
+            for (j = 0; j < MAX_QUANTIFIERS; j++) { 
+                if (pkt->view.data_t1.conjs[i].ts[j] == 0)
+                    continue;
+                pkt->view.data_t1.conjs[i].ts[j] += delta;
+                if (pkt->view.data_t1.conjs[i].ts[j] > now)
+                    pkt->view.data_t1.conjs[i].ts[j] = now;
+            }
+        }
+        for (i = 0; i < LV_DROPS; i++) {
+            if (pkt->view.data_t1.drops[i].ts == 0)
+                continue;
+            pkt->view.data_t1.drops[i].ts += delta;
+            if (pkt->view.data_t1.drops[i].ts > now)
+                pkt->view.data_t1.drops[i].ts = now;
+        }
+        return;
+    }
+
+    delta = pkt->timestamp - now;
+    for (i = 0; i < disjunctions_no; i++)
+        for (j = 0; j < MAX_QUANTIFIERS; j++) {
+            if (pkt->view.data_t1.conjs[i].ts[j] == 0)
+                continue;
+            pkt->view.data_t1.conjs[i].ts[j] -= delta;
+        }
     
-    print_view_msg("send view ", &pkt.view);
-    abc_send(&bconn);
-    printf("view sent\n");
+    for (i = 0; i < LV_DROPS; i++) {
+        if (pkt->view.data_t1.drops[i].ts == 0)
+            continue;
+        pkt->view.data_t1.drops[i].ts -= delta;
+    }
 }
 
 
@@ -98,32 +165,32 @@ static void update_timestamps(drickle_pkt_t *pkt)
     if (now > pkt->timestamp) {
         delta = now - pkt->timestamp;
         for (i = 0; i < LV_ENTRIES; i++) {
-            if (pkt->view.entries[i].ts == 0)
+            if (pkt->view.data.entries[i].ts == 0)
                 continue;
-            pkt->view.entries[i].ts += delta;
-            if (pkt->view.entries[i].ts > now)
-                pkt->view.entries[i].ts = now;
+            pkt->view.data.entries[i].ts += delta;
+            if (pkt->view.data.entries[i].ts > now)
+                pkt->view.data.entries[i].ts = now;
         }
         for (i = 0; i < LV_DROPS; i++) {
-            if (pkt->view.drops[i].ts == 0)
+            if (pkt->view.data.drops[i].ts == 0)
                 continue;
-            pkt->view.drops[i].ts += delta;
-            if (pkt->view.drops[i].ts > now)
-                pkt->view.drops[i].ts = now;
+            pkt->view.data.drops[i].ts += delta;
+            if (pkt->view.data.drops[i].ts > now)
+                pkt->view.data.drops[i].ts = now;
         }
         return;
     }
 
     delta = pkt->timestamp - now;
     for (i = 0; i < LV_ENTRIES; i++) {
-        if (pkt->view.entries[i].ts == 0)
+        if (pkt->view.data.entries[i].ts == 0)
             continue;
-        pkt->view.entries[i].ts -= delta;
+        pkt->view.data.entries[i].ts -= delta;
     }
     for (i = 0; i < LV_DROPS; i++) {
-        if (pkt->view.drops[i].ts == 0)
+        if (pkt->view.data.drops[i].ts == 0)
             continue;
-        pkt->view.drops[i].ts -= delta;
+        pkt->view.data.drops[i].ts -= delta;
     }
 }
 
@@ -135,13 +202,24 @@ static void breceive(struct broadcast_conn *c)
     
     memcpy(&pkt, packetbuf_dataptr(), sizeof(drickle_pkt_t));;
     from = &pkt.src;
-    
-    print_view_msg("received view ", &pkt.view);
+   
+    if (pkt.type == 2)
+        print_view_msg("received view ", &pkt.view.data);
+    else
+        print_viewt1_msg("rt1", &pkt.view.data_t1);
     printf("received view %d.%d\n", from->u8[1], from->u8[0]);
     if (!groupmon_isalive(from))
         groupmon_forceupdate(from);
-    update_timestamps(&pkt);
-    if (!merge_view(&pkt.view))
+    if (pkt.type == 1)
+        update_timestamps_t1(&pkt);
+    else    
+        update_timestamps(&pkt);
+    
+    if ((pkt.type == 1 && merge_disjunctions(&pkt.view.data_t1))
+            || (pkt.type == 2 && merge_view(&pkt.view.data)))
+        drickle_reset();
+    else
+        // TODO two packets = 1 view
         redundant_cnt++;
 }
 
