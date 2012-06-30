@@ -254,7 +254,7 @@ public class Value {
 			buf.append("        { .type = FLOAT,\n");
 			return index + 1;
 		case INT:
-			buf.append("        { .type = BOOL,\n");
+			buf.append("        { .type = INT,\n");
 			buf.append("          .data.value = " + int_value + ",\n");
 			return index + 1;
 		}

@@ -859,6 +859,8 @@ public class MathNode {
 	 * 
 	 */
 	public void factor() {
+		if (type == Type.LEAF)
+			return;
 		if (!rightChild.canFactor())
 			leftChild.factor();
 
@@ -1128,6 +1130,8 @@ public class MathNode {
 	 * @see MathOptimizer
 	 */
 	public void reduceAdditive() {
+		if (type == Type.LEAF)
+			return;
 		new MathOptimizer(new AdditiveOptimizer()).reduce();
 	}
 

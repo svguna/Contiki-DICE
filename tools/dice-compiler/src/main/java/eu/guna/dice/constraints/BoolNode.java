@@ -271,6 +271,21 @@ public class BoolNode {
 		return next_id;
 	}
 
+	public Set<BoolNode> extractDisjunctions() {
+		Set<BoolNode> result = new HashSet<BoolNode>();
+		extractDisjunctions(result);
+		return result;
+	}
+
+	private void extractDisjunctions(Set<BoolNode> result) {
+		if (operator != BoolOperator.OR) {
+			result.add(this);
+			return;
+		}
+		leftChild.extractDisjunctions(result);
+		rightChild.extractDisjunctions(result);
+	}
+
 	/**
 	 * Gets the boolean value of the node. Only valid if the node is a constant.
 	 * 
@@ -485,6 +500,43 @@ public class BoolNode {
 		return negated;
 	}
 
+	public boolean isType2() {
+		if (leftMathChild != null && leftMathChild.getOperator() != null)
+			return true;
+		if (rightMathChild != null && rightMathChild.getOperator() != null)
+			return true;
+		if (leftChild != null && leftChild.isType2())
+			return true;
+		if (rightChild != null && rightChild.isType2())
+			return true;
+		return false;
+	}
+
+	private int leafMathToContiki(boolean simpleType1, StringBuffer buf,
+			int index) {
+		index = leftMathChild.toContiki(buf, index);
+
+		if (simpleType1) {
+			buf.append("        { .type = OPERATOR,\n");
+			buf.append("          .data.op_code = " + compOperator.toContiki()
+					+ ",\n");
+			appendNegated(buf);
+		}
+
+		index = rightMathChild.toContiki(buf, index);
+
+		if (simpleType1)
+			return index;
+
+		buf.append("        { .type = OPERATOR,\n");
+		buf.append("          .data.op_code = " + compOperator.toContiki()
+				+ ",\n");
+		appendNegated(buf);
+		index++;
+
+		return index;
+	}
+
 	private void mergePatterns(List<Pattern> destination, List<Pattern> source,
 			Set<Quantifier> quantIntersection, boolean applyScoping) {
 		for (Iterator<Pattern> i = source.iterator(); i.hasNext();) {
@@ -502,6 +554,25 @@ public class BoolNode {
 		log.debug("negating node: " + this);
 	}
 
+	private int nodeToContiki(boolean simpleType1, StringBuffer buf, int index) {
+		index = leftChild.toContiki(simpleType1, buf, index);
+		index = rightChild.toContiki(simpleType1, buf, index);
+
+		if (simpleType1) {
+			if (!operator.equals(BoolOperator.AND))
+				throw new UnsupportedOperationException(
+						"The constraint is not in the supported form!");
+			return index;
+		}
+
+		buf.append("        { .type = OPERATOR,\n");
+		buf.append("          .data.op_code = " + operator.toContiki() + ",\n");
+		appendNegated(buf);
+		index++;
+
+		return index;
+	}
+
 	/**
 	 * @param quantifications
 	 *            the quantifications to set
@@ -516,25 +587,30 @@ public class BoolNode {
 	/**
 	 * Appends the assignment code for this node into the buffer.
 	 * 
+	 * @param simpleType1
+	 *            TODO
 	 * @param buf
 	 *            The buffer to append to
 	 * 
 	 * @return the next node index
 	 */
-	public int toContiki(StringBuffer buf) {
-		return toContiki(buf, 0);
+	public int toContiki(boolean simpleType1, StringBuffer buf) {
+		return toContiki(simpleType1, buf, 0);
 	}
 
 	/**
 	 * Appends the assignment code for this node into the buffer.
 	 * 
+	 * @param simpleType1
+	 *            TODO
 	 * @param buf
 	 *            The buffer to append to
 	 * @param index
 	 *            The current node index
+	 * 
 	 * @return the next node index
 	 */
-	private int toContiki(StringBuffer buf, int index) {
+	private int toContiki(boolean simpleType1, StringBuffer buf, int index) {
 
 		switch (type) {
 		case LEAF:
@@ -542,21 +618,9 @@ public class BoolNode {
 			appendNegated(buf);
 			return index;
 		case LEAF_MATH:
-			index = leftMathChild.toContiki(buf, index);
-			index = rightMathChild.toContiki(buf, index);
-			buf.append("        { .type = OPERATOR,\n");
-			buf.append("          .data.op_code = " + compOperator.toContiki()
-					+ ",\n");
-			appendNegated(buf);
-			return index + 1;
+			return leafMathToContiki(simpleType1, buf, index);
 		case NODE:
-			index = leftChild.toContiki(buf, index);
-			index = rightChild.toContiki(buf, index);
-			buf.append("        { .type = OPERATOR,\n");
-			buf.append("          .data.op_code = " + operator.toContiki()
-					+ ",\n");
-			appendNegated(buf);
-			return index + 1;
+			return nodeToContiki(simpleType1, buf, index);
 		}
 		return index;
 	}

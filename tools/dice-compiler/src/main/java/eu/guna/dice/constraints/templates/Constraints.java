@@ -3,9 +3,9 @@
  */
 package eu.guna.dice.constraints.templates;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,6 +69,7 @@ public class Constraints {
 			return null;
 
 		buf.append("signature_t signature = {\n");
+		buf.append("    .entries = {\n");
 
 		int i = 0;
 		for (Iterator<Pattern> it = patterns.iterator(); it.hasNext();) {
@@ -76,8 +77,6 @@ public class Constraints {
 			if (pattern.isDummy())
 				continue;
 			Set<Quantifier> quantifiers = pattern.getQuantifiers();
-
-			buf.append("    .entries = {\n");
 
 			buf.append("        { .attr = "
 					+ (pattern.getAttribute().getHash() & 0xFFFF) + ",\n");
@@ -104,12 +103,23 @@ public class Constraints {
 		buf.append("invariant_t invariant = {\n");
 		appendQuantifiers(constraint, buf);
 		buf.append("    .nodes = {\n");
-		int nodes_no = constraint.toContiki(buf);
+		int nodes_no = constraint.toContiki(false, buf);
 		buf.append("    },\n");
 		buf.append("    .nodes_no = " + nodes_no + ",\n");
 		buf.append("};\n\n");
 
+		buf.append("invariant_t disjunctions[0];\n\n");
+		buf.append("int disjunctions_no = 0;\n\n");
+
 		return buf.toString();
+	}
+
+	private static String getEmptyAggregationPattern(int i) {
+		return "signature_t signature;\n\n";
+	}
+
+	private static String getEmptyMappings(int i) {
+		return "mapping_t mapping;\n\n";
 	}
 
 	private static String getHeader() {
@@ -203,6 +213,47 @@ public class Constraints {
 		return buf.toString();
 	}
 
+	private static String getType1Constraint(BoolNode constraint, int id)
+			throws QuantifierNotFoundException {
+		StringBuffer buf = new StringBuffer();
+		if (constraint.getType() == BoolNode.Type.LEAF)
+			return null;
+
+		List<Quantifier> quantifiers = constraint.getQuantifiers();
+
+		Set<BoolNode> disjunctions = constraint.extractDisjunctions();
+		log.info(quantifiers);
+
+		buf.append("invariant_t disjunctions[] = {\n");
+
+		for (BoolNode disjunction : disjunctions) {
+			buf.append("  {\n");
+
+			int i = 0;
+
+			buf.append("    .quantifiers = {\n");
+			for (Iterator<Quantifier> it = quantifiers.iterator(); it.hasNext();) {
+				Quantifier q = it.next();
+				buf.append("        " + q.getType().toNesc()
+						+ (it.hasNext() ? "," : "") + "\n");
+				i++;
+			}
+			buf.append("    },\n");
+			buf.append("    .quantifiers_no = " + i + ",\n");
+
+			buf.append("    .nodes = {\n");
+			int nodes_no = disjunction.toContiki(true, buf);
+			buf.append("    },\n");
+			buf.append("    .nodes_no = " + nodes_no + ",\n");
+			buf.append("  },\n\n");
+		}
+
+		buf.append("};\n\n");
+		buf.append("int disjunctions_no = " + disjunctions.size() + ";\n");
+		buf.append("invariant_t invariant;\n\n");
+		return buf.toString();
+	}
+
 	/**
 	 * Dumps the constraints on the stdout.
 	 * 
@@ -213,18 +264,8 @@ public class Constraints {
 	 * @throws QuantifierNotFoundException
 	 */
 	public static void printCode(ConstraintTable constraintTable)
-			throws QuantifierNotFoundException {
-
-		BoolNode constraint = constraintTable.getConstraints().get(0);
-		constraint.getQuantifiers();
-		String funcConstraint = getConstraint(constraint, 0);
-		String funcPattern = getAggregationPattern(constraint, 0);
-		String funcMapping = getMappings(constraint, 0);
-		if (funcConstraint != null && funcPattern != null) {
-			System.out.println(funcConstraint);
-			System.out.println(funcPattern);
-			System.out.println(funcMapping);
-		}
+			throws QuantifierNotFoundException, IOException {
+		writeToBuffer(constraintTable, System.out);
 	}
 
 	/**
@@ -240,24 +281,37 @@ public class Constraints {
 			throws IOException, QuantifierNotFoundException {
 		String outFilename = Strings.getString("module-dir")
 				+ Strings.getString("Constraints.constraint-output-file");
-		BufferedWriter out = new BufferedWriter(new FileWriter(outFilename));
+		PrintStream out = new PrintStream(new File(outFilename));
+
 		log.info("Generating " + outFilename);
 
-		out.write(Strings.getString("file-header") + "\n");
-
-		out.write(getHeader());
-
-		BoolNode constraint = constraintTable.getConstraints().get(0);
-		constraint.getQuantifiers();
-		String funcConstraint = getConstraint(constraint, 0);
-		String funcPattern = getAggregationPattern(constraint, 0);
-		String funcMapping = getMappings(constraint, 0);
-		if (funcConstraint != null && funcPattern != null) {
-			out.write(funcConstraint);
-			out.write(funcPattern);
-			out.write(funcMapping);
-		}
+		writeToBuffer(constraintTable, out);
 
 		out.close();
+	}
+
+	private static void writeToBuffer(ConstraintTable constraintTable,
+			PrintStream out) throws IOException, QuantifierNotFoundException {
+		out.println(Strings.getString("file-header"));
+		out.print(getHeader());
+
+		BoolNode constraint = constraintTable.getConstraints().get(0);
+		boolean isType2 = constraint.isType2();
+		log.debug("Is type 2: " + isType2);
+		constraint.getQuantifiers();
+		String funcConstraint = null, funcPattern = null, funcMapping = null;
+
+		if (isType2) {
+			funcConstraint = getConstraint(constraint, 0);
+			funcPattern = getAggregationPattern(constraint, 0);
+			funcMapping = getMappings(constraint, 0);
+		} else {
+			funcConstraint = getType1Constraint(constraint, 0);
+			funcPattern = getEmptyAggregationPattern(0);
+			funcMapping = getEmptyMappings(0);
+		}
+		out.print(funcConstraint);
+		out.print(funcPattern);
+		out.print(funcMapping);
 	}
 }

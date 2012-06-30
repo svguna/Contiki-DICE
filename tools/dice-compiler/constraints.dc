@@ -1,1 +1,1 @@
-constraint {any m, n: temp@m + temp@n < 60}
+constraint {any m, n: gigi@m  + titi@n > 71] }

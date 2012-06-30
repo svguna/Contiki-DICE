@@ -49,6 +49,10 @@ public class ConstraintTable {
 	 *            The root of the boolean expression.
 	 */
 	protected void addConstraint(BoolNode node) {
+		if (constraints.size() == 1) {
+			throw new UnsupportedOperationException(
+					"This version of the compiler only supports one invariant!");
+		}
 		log.debug("adding constraint:" + node);
 		constraints.add(node);
 	}
