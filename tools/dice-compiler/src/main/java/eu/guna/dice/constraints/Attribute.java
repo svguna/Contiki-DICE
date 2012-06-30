@@ -190,9 +190,10 @@ public class Attribute {
 	 */
 	protected int toContiki(StringBuffer buf, int index) {
 		buf.append("        { .type = ATTRIBUTE,\n");
-		buf.append("          .data.attribute.hash = " + hash + ",\n");
+		buf.append("          .data.attribute.hash = " + hash + ", /* " + name
+				+ " */\n");
 		buf.append("          .data.attribute.quantifier = "
-				+ quantifier.getId() + ",\n");
+				+ quantifier.getId() + ", /* " + quantifier.getName() + " */\n");
 		return index + 1;
 	}
 

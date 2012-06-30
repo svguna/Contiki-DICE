@@ -41,8 +41,8 @@ public class Constraints {
 		buf.append("    .quantifiers = {\n");
 		for (Iterator<Quantifier> it = quantifiers.iterator(); it.hasNext();) {
 			Quantifier q = it.next();
-			buf.append("        " + q.getType().toNesc()
-					+ (it.hasNext() ? "," : "") + "\n");
+			buf.append("        " + q.getType().toNesc() + ", /* "
+					+ q.getName() + " */ \n");
 			i++;
 		}
 		buf.append("    },\n");
@@ -79,7 +79,8 @@ public class Constraints {
 			Set<Quantifier> quantifiers = pattern.getQuantifiers();
 
 			buf.append("        { .attr = "
-					+ (pattern.getAttribute().getHash() & 0xFFFF) + ",\n");
+					+ (pattern.getAttribute().getHash() & 0xFFFF) + ", /* "
+					+ pattern.getAttribute().getName() + " */\n");
 
 			buf.append("          .objective = " + pattern.getObjective()
 					+ ",\n");
@@ -166,9 +167,11 @@ public class Constraints {
 				int k = startOffset;
 				for (Quantifier q : mappingsi.get(mId1)) {
 					buf.append("        { .attribute = "
-							+ pi.getAttribute().getHash() + ",\n");
+							+ pi.getAttribute().getHash() + ", /* "
+							+ pi.getAttribute().getName() + " */\n");
 					buf.append("          .math_id = " + mId1 + ",\n");
-					buf.append("          .quantifier = " + q.getId() + ",\n");
+					buf.append("          .quantifier = " + q.getId() + ", /* "
+							+ q.getName() + " */\n");
 					buf.append("          .index = " + k + "\n");
 					buf.append("        },\n");
 					k++;
@@ -194,10 +197,11 @@ public class Constraints {
 						k = startOffset2;
 						for (Quantifier q : mappingsj.get(mId1)) {
 							buf.append("        { .attribute = "
-									+ pi.getAttribute().getHash() + ",\n");
+									+ pi.getAttribute().getHash() + ", /* "
+									+ pi.getAttribute().getName() + " */\n");
 							buf.append("          .math_id = " + mId1 + ",\n");
 							buf.append("          .quantifier = " + q.getId()
-									+ ",\n");
+									+ ", /*" + q.getName() + " */\n");
 							buf.append("          .index = " + k + "\n");
 							buf.append("        },\n");
 							k++;
@@ -234,8 +238,8 @@ public class Constraints {
 			buf.append("    .quantifiers = {\n");
 			for (Iterator<Quantifier> it = quantifiers.iterator(); it.hasNext();) {
 				Quantifier q = it.next();
-				buf.append("        " + q.getType().toNesc()
-						+ (it.hasNext() ? "," : "") + "\n");
+				buf.append("        " + q.getType().toNesc() + ", /* "
+						+ q.getName() + " */\n");
 				i++;
 			}
 			buf.append("    },\n");
