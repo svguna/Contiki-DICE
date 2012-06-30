@@ -188,12 +188,11 @@ public class Attribute {
 	 *            The current node index
 	 * @return the next node index
 	 */
-	protected int toNesc(StringBuffer buf, int index) {
-		buf.append("    constraint->nodes[" + index + "].type = ATTRIBUTE;\n");
-		buf.append("    constraint->nodes[" + index
-				+ "].data.attribute.hash = " + hash + "U;\n");
-		buf.append("    constraint->nodes[" + index
-				+ "].data.attribute.quantifier = " + quantifier.getId() + ";\n");
+	protected int toContiki(StringBuffer buf, int index) {
+		buf.append("        { .type = ATTRIBUTE,\n");
+		buf.append("          .data.attribute.hash = " + hash + ",\n");
+		buf.append("          .data.attribute.quantifier = "
+				+ quantifier.getId() + ",\n");
 		return index + 1;
 	}
 

@@ -29,7 +29,7 @@ public class ConstraintsCompiler {
 				.getString("Constraints.logger-configuration"));
 		boolean justPrint = args.length == 1 && args[0].equals("PRINT");
 
-		parse(Strings.getString("Constraints.constraint-file"), justPrint);
+		parse(Strings.getString("Constraints.constraint-input-file"), justPrint);
 
 	}
 

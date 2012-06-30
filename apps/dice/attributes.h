@@ -1,6 +1,8 @@
 #ifndef __ATTRIBUTES_H
 #define __ATTRIBUTES_H
 
+#include "rime.h"
+
 #define ATTRIBUTE_REFRESH 120
 
 extern int local_attribute_no;

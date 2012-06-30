@@ -92,6 +92,8 @@ struct signature {
 };
 typedef struct signature signature_t;
 
+extern signature_t signature;
+
 void print_entry(char *buf, view_entry_t *entry);
 void print_entry_msg(char *msg, view_entry_t *entry);
 void print_drop(char *buf, view_drop_t *drop);

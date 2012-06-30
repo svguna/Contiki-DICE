@@ -6,6 +6,7 @@
 
 extern int disjunctions_no;
 void evaluate_local_disjunctions(view_conj_t view_conjs[LV_CONJS]);
+int evaluate_disjunctions(view_conj_t view_conjs[LV_CONJS]);
 int evaluate(view_entry_t entries[LV_ENTRIES], inv_node_t *noder);
 
 #endif

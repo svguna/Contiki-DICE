@@ -241,25 +241,21 @@ public class Value {
 	 *            The current node index
 	 * @return the next node index
 	 */
-	protected int toNesc(StringBuffer buf, int index) {
+	protected int toContiki(StringBuffer buf, int index) {
 		switch (type) {
 		case ATTRIBUTE:
-			return att_value.toNesc(buf, index);
+			return att_value.toContiki(buf, index);
 		case BOOL:
-			buf.append("    constraint->nodes[" + index + "].type = BOOL;\n");
-			buf.append("    constraint->nodes[" + index
-					+ "].data.bool_value = "
-					+ ((bool_value) ? "TRUE" : "FALSE") + ";\n");
+			buf.append("        { .type = BOOL,\n");
+			buf.append("          .data.value = " + ((bool_value) ? "1" : "0")
+					+ ",\n");
 			return index + 1;
 		case FLOAT:
-			buf.append("    constraint->nodes[" + index + "].type = FLOAT;\n");
-			buf.append("    constraint->nodes[" + index
-					+ "].data.float_value = " + float_value + ";\n");
+			buf.append("        { .type = FLOAT,\n");
 			return index + 1;
 		case INT:
-			buf.append("    constraint->nodes[" + index + "].type = INT;\n");
-			buf.append("    constraint->nodes[" + index + "].data.int_value = "
-					+ int_value + ";\n");
+			buf.append("        { .type = BOOL,\n");
+			buf.append("          .data.value = " + int_value + ",\n");
 			return index + 1;
 		}
 		return index;

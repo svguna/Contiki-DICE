@@ -12,7 +12,6 @@
 
 dice_view_t local_view;
 dice_view_t1_t local_view_t1;
-signature_t signature;
 
 
 static int push_to_slice(view_entry_t *entry, view_entry_t entries[LV_ENTRIES], 
@@ -349,10 +348,6 @@ int prune_view(clock_time_t ts)
 
 void view_manager_init()
 {
-    signature.entries_no = 1;
-    signature.entries[0].attr = 1;
-    signature.entries[0].objective = OBJ_MAXIMIZE;
-    signature.entries[0].slice_size = 2;
 }
 
 

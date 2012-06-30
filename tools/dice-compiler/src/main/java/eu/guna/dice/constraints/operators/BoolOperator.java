@@ -41,7 +41,7 @@ public enum BoolOperator {
 			return 0;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "BOOL_AND";
 		}
 
@@ -61,7 +61,7 @@ public enum BoolOperator {
 			return 0;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "BOOL_DBL_IMPLY";
 		}
 
@@ -90,7 +90,7 @@ public enum BoolOperator {
 			return 1;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "BOOL_IMPLY";
 		}
 
@@ -123,7 +123,7 @@ public enum BoolOperator {
 			return 2;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "BOOL_OR";
 		}
 
@@ -153,7 +153,7 @@ public enum BoolOperator {
 	 * 
 	 * @return The string representation of the constant.
 	 */
-	abstract public String toNesc();
+	abstract public String toContiki();
 
 	/*
 	 * (non-Javadoc)

@@ -43,7 +43,7 @@ public enum ComparisonOperator {
 		}
 
 		@Override
-		public String toNesc() {
+		public String toContiki() {
 			return "COMP_DIFFERENT";
 		}
 
@@ -81,7 +81,7 @@ public enum ComparisonOperator {
 		}
 
 		@Override
-		public String toNesc() {
+		public String toContiki() {
 			return "COMP_EQUAL";
 		}
 
@@ -119,7 +119,7 @@ public enum ComparisonOperator {
 		}
 
 		@Override
-		public String toNesc() {
+		public String toContiki() {
 			return "COMP_GREATER";
 		}
 
@@ -157,7 +157,7 @@ public enum ComparisonOperator {
 		}
 
 		@Override
-		public String toNesc() {
+		public String toContiki() {
 			return "COMP_LOWER";
 		}
 
@@ -200,7 +200,7 @@ public enum ComparisonOperator {
 	 * 
 	 * @return The string representation of the constant.
 	 */
-	abstract public String toNesc();
+	abstract public String toContiki();
 
 	/*
 	 * (non-Javadoc)

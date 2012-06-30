@@ -30,10 +30,6 @@ spec	:	constraint_spec
 	
 constraint_spec
 	:	'constraint' '{' bool_expr '}'
-    ('tolerance' tolerance=NO_INTEGER 
-    {$bool_expr.node.setTolerance(Integer.parseInt($tolerance.text)); }
-    ('for' count=NO_INTEGER 'times' 'in' period=NO_INTEGER
-    {$bool_expr.node.setToleranceHistory(Integer.parseInt($count.text), Integer.parseInt($period.text));} )? ';')?
 	{ constraintTable.addConstraint($bool_expr.node); }
 	;
 

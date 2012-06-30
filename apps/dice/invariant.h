@@ -69,5 +69,9 @@ struct mapping {
 };
 typedef struct mapping mapping_t;
 
+
+extern invariant_t invariant;
+extern mapping_t mapping;
+
 #endif
 

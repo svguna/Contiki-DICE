@@ -50,7 +50,6 @@ public class ConstraintTable {
 	 */
 	protected void addConstraint(BoolNode node) {
 		log.debug("adding constraint:" + node);
-		node.setDefaultTolerance();
 		constraints.add(node);
 	}
 

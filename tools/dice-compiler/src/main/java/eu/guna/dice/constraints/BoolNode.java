@@ -12,7 +12,6 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import eu.guna.dice.common.Strings;
 import eu.guna.dice.constraints.exceptions.InvalidTypeException;
 import eu.guna.dice.constraints.exceptions.QuantifierInUseException;
 import eu.guna.dice.constraints.exceptions.QuantifierNotFoundException;
@@ -133,12 +132,6 @@ public class BoolNode {
 	 */
 	private MathNode rightMathChild;
 
-	/** The time tolerance of the constraint in milli seconds. */
-	private int tolerance;
-
-	/** Flag for top-most boolean node. */
-	boolean toleranceSet = false;
-
 	/** The type of the node. */
 	private Type type;
 
@@ -173,7 +166,6 @@ public class BoolNode {
 		negated = other.negated;
 		operator = other.operator;
 		quantifications = new Quantifications(other.quantifications);
-		tolerance = other.tolerance;
 		count = other.count;
 		period = other.period;
 		type = other.type;
@@ -225,6 +217,15 @@ public class BoolNode {
 		this.leftMathChild = leftMathChild;
 		this.rightMathChild = rightMathChild;
 		log.debug("new node: " + this);
+	}
+
+	private void appendNegated(StringBuffer buf) {
+		buf.append("          .negated = ");
+		if (negated)
+			buf.append("1,\n");
+		else
+			buf.append("0,\n");
+		buf.append("        },\n");
 	}
 
 	/**
@@ -502,21 +503,6 @@ public class BoolNode {
 	}
 
 	/**
-	 * Set the tolerance of a constraint to the default value.
-	 */
-	protected void setDefaultTolerance() {
-		if (toleranceSet)
-			return;
-		this.tolerance = Integer.parseInt(Strings
-				.getString("Constraints.default-tolerance"));
-		this.count = Integer.parseInt(Strings
-				.getString("Constraints.default-count"));
-		this.period = Integer.parseInt(Strings
-				.getString("Constraints.default-period"));
-		toleranceSet = true;
-	}
-
-	/**
 	 * @param quantifications
 	 *            the quantifications to set
 	 */
@@ -528,35 +514,6 @@ public class BoolNode {
 	}
 
 	/**
-	 * Set the time tolerance (without history) for a constraint.
-	 * 
-	 * @param tolerance
-	 *            The time tolerance in seconds.
-	 */
-	protected void setTolerance(int tolerance) {
-		this.tolerance = tolerance;
-		this.count = Integer.parseInt(Strings
-				.getString("Constraints.default-count"));
-		this.period = Integer.parseInt(Strings
-				.getString("Constraints.default-period"));
-		toleranceSet = true;
-	}
-
-	/**
-	 * Set the time tolerance history of the constraint.
-	 * 
-	 * @param count
-	 *            The tolerance events that are allowed during the period.
-	 *            (seconds)
-	 * @param period
-	 *            The period in which tolerance events are counted. (seconds)
-	 */
-	protected void setToleranceHistory(int count, int period) {
-		this.count = count;
-		this.period = period;
-	}
-
-	/**
 	 * Appends the assignment code for this node into the buffer.
 	 * 
 	 * @param buf
@@ -564,8 +521,8 @@ public class BoolNode {
 	 * 
 	 * @return the next node index
 	 */
-	public int toNesc(StringBuffer buf) {
-		return toNesc(buf, 0);
+	public int toContiki(StringBuffer buf) {
+		return toContiki(buf, 0);
 	}
 
 	/**
@@ -577,46 +534,28 @@ public class BoolNode {
 	 *            The current node index
 	 * @return the next node index
 	 */
-	private int toNesc(StringBuffer buf, int index) {
-		if (toleranceSet) {
-			buf.append("    constraint->tolerance = " + tolerance + ";\n");
-			buf.append("    constraint->count = " + count + ";\n");
-			buf.append("    constraint->period = " + period + ";\n");
-		}
+	private int toContiki(StringBuffer buf, int index) {
+
 		switch (type) {
 		case LEAF:
-			index = value.toNesc(buf, index);
-			buf.append("    constraint->nodes[" + index + "].negated = ");
-			if (negated)
-				buf.append("TRUE;\n");
-			else
-				buf.append("FALSE;\n");
+			index = value.toContiki(buf, index);
+			appendNegated(buf);
 			return index;
 		case LEAF_MATH:
-			index = leftMathChild.toNesc(buf, index);
-			index = rightMathChild.toNesc(buf, index);
-			buf.append("    constraint->nodes[" + index
-					+ "].type = OPERATOR;\n");
-			buf.append("    constraint->nodes[" + index + "].data.op_code = "
-					+ compOperator.toNesc() + ";\n");
-			buf.append("    constraint->nodes[" + index + "].negated = ");
-			if (negated)
-				buf.append("TRUE;\n");
-			else
-				buf.append("FALSE;\n");
+			index = leftMathChild.toContiki(buf, index);
+			index = rightMathChild.toContiki(buf, index);
+			buf.append("        { .type = OPERATOR,\n");
+			buf.append("          .data.op_code = " + compOperator.toContiki()
+					+ ",\n");
+			appendNegated(buf);
 			return index + 1;
 		case NODE:
-			index = leftChild.toNesc(buf, index);
-			index = rightChild.toNesc(buf, index);
-			buf.append("    constraint->nodes[" + index
-					+ "].type = OPERATOR;\n");
-			buf.append("    constraint->nodes[" + index + "].data.op_code = "
-					+ operator.toNesc() + ";\n");
-			buf.append("    constraint->nodes[" + index + "].negated = ");
-			if (negated)
-				buf.append("TRUE;\n");
-			else
-				buf.append("FALSE;\n");
+			index = leftChild.toContiki(buf, index);
+			index = rightChild.toContiki(buf, index);
+			buf.append("        { .type = OPERATOR,\n");
+			buf.append("          .data.op_code = " + operator.toContiki()
+					+ ",\n");
+			appendNegated(buf);
 			return index + 1;
 		}
 		return index;

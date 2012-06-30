@@ -667,6 +667,16 @@ public class MathNode {
 		log.debug("new node: " + this);
 	}
 
+	private void appendNegated(StringBuffer buf) {
+		buf.append("          .negated = ");
+		if (negated)
+			buf.append("1,\n");
+		else
+			buf.append("0,\n");
+		buf.append("        },\n");
+
+	}
+
 	/**
 	 * Return a boolean indicating whether this node can be used to be factored.
 	 * 
@@ -1172,28 +1182,19 @@ public class MathNode {
 	 *            The current node index
 	 * @return the next node index
 	 */
-	public int toNesc(StringBuffer buf, int index) {
+	public int toContiki(StringBuffer buf, int index) {
 		switch (type) {
 		case NODE:
-			index = leftChild.toNesc(buf, index);
-			index = rightChild.toNesc(buf, index);
-			buf.append("    constraint->nodes[" + index
-					+ "].type = OPERATOR;\n");
-			buf.append("    constraint->nodes[" + index + "].data.op_code = "
-					+ operator.toNesc() + ";\n");
-			buf.append("    constraint->nodes[" + index + "].negated = ");
-			if (negated)
-				buf.append("TRUE;\n");
-			else
-				buf.append("FALSE;\n");
+			index = leftChild.toContiki(buf, index);
+			index = rightChild.toContiki(buf, index);
+			buf.append("        { .type = OPERATOR,\n");
+			buf.append("          .data.op_code = " + operator.toContiki()
+					+ ",\n");
+			appendNegated(buf);
 			return index + 1;
 		case LEAF:
-			buf.append("    constraint->nodes[" + index + "].negated = ");
-			if (negated)
-				buf.append("TRUE;\n");
-			else
-				buf.append("FALSE;\n");
-			index = value.toNesc(buf, index);
+			index = value.toContiki(buf, index);
+			appendNegated(buf);
 			return index;
 		}
 		return index;

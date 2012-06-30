@@ -61,7 +61,7 @@ public enum MathOperator {
 			return 7;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "MATH_DIV";
 		}
 
@@ -111,7 +111,7 @@ public enum MathOperator {
 			return 8;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "MATH_MINUS";
 		}
 
@@ -161,7 +161,7 @@ public enum MathOperator {
 			return 9;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "MATH_MOD";
 		}
 
@@ -210,7 +210,7 @@ public enum MathOperator {
 			return 10;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "MATH_MUL";
 		}
 
@@ -260,7 +260,7 @@ public enum MathOperator {
 			return 11;
 		}
 
-		public String toNesc() {
+		public String toContiki() {
 			return "MATH_PLUS";
 		}
 
@@ -294,7 +294,7 @@ public enum MathOperator {
 	 * 
 	 * @return The string representation of the constant.
 	 */
-	abstract public String toNesc();
+	abstract public String toContiki();
 
 	/*
 	 * (non-Javadoc)

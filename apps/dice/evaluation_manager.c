@@ -90,60 +90,6 @@ invariant_t disjunctions[] = {
 };
 
 
-// The following defines the date required for a type 2 invariant
-invariant_t invariant = {
-    .quantifiers_no = 2,
-    .quantifiers = { QUANT_UNIVERSAL, QUANT_UNIVERSAL},
-    .nodes_no = 7,
-    .nodes = {
-        { .type = ATTRIBUTE,
-          .negated = 0,
-          .data.attribute.hash = 1,
-          .data.attribute.quantifier = 0
-        },
-        { .type = ATTRIBUTE,
-          .negated = 0,
-          .data.attribute.hash = 1,
-          .data.attribute.quantifier = 1
-        },
-        { .type = OPERATOR,
-          .negated = 0,
-          .data.op_code = MATH_PLUS,
-        },
-        { .type = INT,
-          .negated = 0,
-          .data.value = 100,
-        },
-        { .type = OPERATOR,
-          .negated = 0,
-          .data.op_code = MATH_MINUS,
-        },
-        { .type = INT,
-          .negated = 0,
-          .data.value = 0,
-        },
-        { .type = OPERATOR,
-          .negated = 0,
-          .data.op_code = COMP_LOWER,
-        },
-    }
-};
-mapping_t mapping = {
-    .data_no = 2,
-    .data = {
-        { .attribute = 1,
-          .math_id = 0,
-          .quantifier = 0,
-          .index = 0
-        },
-        { .attribute = 1,
-          .math_id = 0,
-          .quantifier = 1,
-          .index = 1
-        },
-    }
-};
-
 typedef struct stack {
     int size;
     inv_node_t nodes[MAX_STACK_SIZE];
