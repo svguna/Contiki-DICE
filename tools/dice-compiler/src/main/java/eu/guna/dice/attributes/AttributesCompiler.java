@@ -12,7 +12,6 @@ import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.apache.log4j.Logger;
 
-
 import eu.guna.dice.common.LoggerConfiguration;
 import eu.guna.dice.common.Strings;
 
@@ -58,27 +57,23 @@ public class AttributesCompiler {
 		}
 		AttributeTable attTable = parser.getAttributeTable();
 		try {
-			BufferedWriter bufMod = new BufferedWriter(new FileWriter(Strings
-					.getString("module-dir")
-					+ Strings.getString("Attributes.module-name")
-					+ Strings.getString("extension")));
-			BufferedWriter bufInterf = new BufferedWriter(new FileWriter(
-					Strings.getString("interface-dir")
-							+ Strings.getString("Attributes.interface-set")
-							+ Strings.getString("extension")));
-			BufferedWriter bufConfig = new BufferedWriter(new FileWriter(
-					Strings.getString("module-dir")
-							+ Strings.getString("Attributes.config-name")
-							+ Strings.getString("extension")));
 
-			bufMod.append(Strings.getString("file-header") + "\n");
-			bufInterf.append(Strings.getString("file-header") + "\n");
-			bufConfig.append(Strings.getString("file-header") + "\n");
+			String outName = Strings.getString("module-dir")
+					+ Strings.getString("Attributes.attribute-output-file");
+			String outHeaderName = Strings.getString("module-dir")
+					+ Strings.getString("Attributes.attribute-output-header");
 
-			attTable.writeToBuffer(bufMod, bufInterf, bufConfig);
-			bufMod.close();
-			bufInterf.close();
-			bufConfig.close();
+			BufferedWriter bufCode = new BufferedWriter(new FileWriter(outName));
+			BufferedWriter bufHeader = new BufferedWriter(new FileWriter(
+					outHeaderName));
+			log.info("Outputting attributes to " + outName);
+
+			bufCode.append(Strings.getString("file-header") + "\n\n");
+			bufHeader.append(Strings.getString("file-header") + "\n\n");
+
+			attTable.writeToBuffer(bufCode, bufHeader);
+			bufCode.close();
+			bufHeader.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

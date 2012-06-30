@@ -1,0 +1,5 @@
+attribute int gigi every 2;
+attribute int temperature every 3;
+
+attribute int gogu = 3;
+attribute int vasilica on event;

@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import eu.guna.dice.attributes.exceptions.AttributeAlreadyDefinedException;
-import eu.guna.dice.common.Strings;
 
 /**
  * An attribute lookup table used during the compilation process.
@@ -20,7 +19,6 @@ import eu.guna.dice.common.Strings;
  * 
  */
 class AttributeTable {
-	private static final String KW_ID = "id";
 	/** Internal data */
 	private HashMap<String, Attribute> data;
 
@@ -42,265 +40,178 @@ class AttributeTable {
 		data.put(att.getName(), att);
 	}
 
-	private void printConfiguration(BufferedWriter buffer, String timerDecls,
-			String timerLinks) throws IOException {
-		buffer.append("#include \"Timer.h\"\n\n");
-		
-		buffer.append("configuration "
-				+ Strings.getString("Attributes.config-name") + " {\n");
-		buffer.append("  provides interface "
-				+ Strings.getString("Attributes.interface-read") + ";\n");
-        buffer.append("  provides interface DiceReport;\n");
-		buffer.append("  uses interface "
-				+ Strings.getString("Attributes.interface-set") + ";\n");
-		buffer.append("}\n\n");
-
-		buffer.append("implementation {\n");
-		buffer.append("  components MainC;\n");
-		buffer.append("  components LedsC;\n");
-		buffer.append("  components HilTimerMilliC as Time;\n");
-		buffer.append("  components "
-				+ Strings.getString("Attributes.module-name") + ";\n");
-		buffer.append("  components DeltaSpeedC;\n");
-		buffer.append(timerDecls);
-		buffer.append("\n");
-
-		buffer.append("  " + Strings.getString("Attributes.module-name")
-				+ ".Boot -> MainC;\n\n");
-		buffer.append("  DeltaSpeedC.ReadRawAttributes -> "
-				+ Strings.getString("Attributes.module-name")
-				+ ".ReadRawAttributes;\n");
-
-		buffer.append("  " + Strings.getString("Attributes.module-name")
-				+ ".Leds -> LedsC;\n");
-
-		buffer.append("  " + Strings.getString("Attributes.module-name") + "."
-				+ Strings.getString("Attributes.interface-set") + " = "
-				+ Strings.getString("Attributes.interface-set") + ";\n");
-		buffer.append("  " + Strings.getString("Attributes.interface-read")
-				+ " = DeltaSpeedC."
-				+ Strings.getString("Attributes.interface-read") + ";\n");
-        buffer.append("  DiceReport = DeltaSpeedC.DiceReport;\n\n");
-		buffer.append(timerLinks);
-		buffer.append("}\n");
-	}
-
-	private void printInterfaceFooter(BufferedWriter buffer) throws IOException {
-		buffer.append("}\n");
-	}
-
-	private void printInterfaceHeader(BufferedWriter buffer) throws IOException {
-		buffer.append("interface "
-				+ Strings.getString("Attributes.interface-set") + " {\n");
-		buffer.append("  event void set_attribute(int hash, void * value);\n");
-	}
-
 	private void printModuleFooter(BufferedWriter buffer) throws IOException {
-		buffer.append("}\n");
+		buffer.append("}\n\n");
 	}
 
-	private void printModuleHeader(BufferedWriter buffer,
-			StringBuffer bufUsesTimers) throws IOException {
-		buffer.append("module " + Strings.getString("Attributes.module-name")
-				+ " {\n");
-		buffer.append("  provides interface "
-				+ Strings.getString("Attributes.interface-read")
-				+ " as ReadRawAttributes;\n");
-		buffer.append("  uses interface "
-				+ Strings.getString("Attributes.interface-set") + ";\n");
-		buffer.append("  uses interface Boot;\n");
-		buffer.append("  uses interface Leds;\n");
-		buffer.append(bufUsesTimers.toString());
+	private void printModuleHeader(BufferedWriter buffer) throws IOException {
+
+		buffer.append("static void generic_update(uint16_t attr, int new_val)\n");
+		buffer.append("{\n");
+		buffer.append("    int updated = 0;\n");
+		buffer.append("    view_entry_t entry;\n\n");
+		buffer.append("    entry.ts = clock_time();\n");
+		buffer.append("    entry.val = new_val;\n");
+		buffer.append("    entry.attr = attr;\n");
+		buffer.append("    memcpy(&entry.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));\n\n");
+
+		buffer.append("    if (local_disjunctions_refresh()) {\n");
+		buffer.append("        updated = 1;\n");
+		buffer.append("        print_viewt1_msg(\"T1 ar\", &local_view_t1);\n");
+		buffer.append("    }\n");
+		buffer.append("    print_entry_msg(\"attribute refresh \", &entry);\n");
+		buffer.append("    if (push_entry(&entry)) {\n");
+		buffer.append("        print_view_msg(\"after refresh \", &local_view);\n");
+		buffer.append("        updated = 1;\n");
+		buffer.append("    }\n");
+		buffer.append("    if (updated)\n");
+		buffer.append("        drickle_reset();\n");
 		buffer.append("}\n\n");
-		buffer.append("implementation {\n");
-		buffer.append("  uint16_t id;\n");
+
 	}
 
 	private void writeData(StringBuffer bufDecl, StringBuffer bufGetValue,
-			StringBuffer bufPersist, StringBuffer bufSetValue,
-			StringBuffer bufInterface, StringBuffer bufBooted,
-			StringBuffer bufModFunctions, StringBuffer bufUsesTimers,
-			StringBuffer bufTimerComponents, StringBuffer bufTimerLinks) {
+			StringBuffer bufHeader, StringBuffer bufInit,
+			StringBuffer bufSetFunctions) {
+
+		bufDecl.append("int local_attribute_hashes[] = {\n");
+		for (Attribute att : data.values())
+			bufDecl.append("    " + (att.getName().hashCode() & 0xFFFF)
+					+ ", \n");
+		bufDecl.append("};\n");
+		bufDecl.append("int local_attribute_no = " + data.values().size()
+				+ ";\n");
 
 		for (Iterator<Attribute> it = data.values().iterator(); it.hasNext();) {
 			Attribute att = it.next();
 
-			if (att.getValue().getType() == Value.Type.STATIC)
-				bufInterface.append("  command " + att.getType()
-						+ " get_" + att.getName() + "();\n"); //$NON-NLS-2$
-
 			if (att.getValue().getType() == Value.Type.DYNAMIC) {
-				bufInterface.append("  command " + att.getType()
-						+ " get_" + att.getName() + "(bool *dontWait);\n"); //$NON-NLS-2$
+				bufHeader.append(att.getType() + " get_" + att.getName()
+						+ "(); /* TO BE IMPLEMENTED */\n");
 
-				bufInterface.append("  event void set_" //$NON-NLS-2$
-						+ att.getName() + "(" + att.getType() + " val);\n");
+				bufSetFunctions.append("static void set_" + att.getName()
+						+ "(void *data)\n");
+				bufSetFunctions.append("{\n");
+				bufSetFunctions.append("    " + att.getType()
+						+ " new_val = get_" + att.getName() + "();\n\n");
 
-				bufModFunctions
-						.append("\n  event void " + Strings.getString("Attributes.interface-set") //$NON-NLS-2$
-								+ ".set_" + att.getName() + "(" + att.getType() //$NON-NLS-2$
-								+ " val)\n  {\n");
-				bufModFunctions
-						.append("    new_" + att.getName() + " = val;\n"); //$NON-NLS-2$
-				bufModFunctions
-						.append("    signal ReadRawAttributes.attributeChanged("
+				bufSetFunctions.append("    if (new_val != attribute_"
+						+ att.getName() + ")\n");
+				bufSetFunctions
+						.append("        generic_update("
 								+ (att.getName().hashCode() & 0xFFFF)
-								+ "U, (void *) &new_" + att.getName() + ");\n");
-				bufModFunctions.append("  }\n");
+								+ ", new_val);\n");
+				bufSetFunctions.append("    ctimer_reset(&att_" + att.getName()
+						+ "_timer);\n");
+				bufSetFunctions.append("}\n\n");
 
-				bufUsesTimers.append("  uses interface Timer<TMilli> as Timer"
-						+ att.getName() + ";\n");
+				bufInit.append("    period = " + att.getValue().getPeriod()
+						+ " * CLOCK_SECOND;\n");
+				bufInit.append("    ctimer_set(&att_" + att.getName()
+						+ "_timer, period, &set_" + att.getName()
+						+ ", NULL);\n");
 
-				bufBooted.append("    call Timer" + att.getName()
-						+ ".startPeriodic(" + att.getValue().getPeriod()
-						+ ");\n");
-
-				bufTimerComponents
-						.append("  components new TimerMilliC() as Timer"
-								+ att.getName() + ";\n");
-				bufTimerLinks.append("  "
-						+ Strings.getString("Attributes.module-name")
-						+ ".Timer" + att.getName() + " -> Timer"
-						+ att.getName() + ";\n");
-
-				bufModFunctions.append("\n  event void Timer" + att.getName()
-						+ ".fired()\n  {\n");
-				bufModFunctions.append("    bool dontWait = FALSE;\n");
-				bufModFunctions
-						.append("    "
-								+ att.getType()
-								+ " temp_val = call " + Strings.getString("Attributes.interface-set") + ".get_" //$NON-NLS-2$ //$NON-NLS-3$
-								+ att.getName() + "(&dontWait);\n");
-				bufModFunctions.append("    if (dontWait == TRUE) {\n");
-				bufModFunctions
-						.append("      new_" + att.getName() + " = temp_val;\n"); //$NON-NLS-2$
-				bufModFunctions
-						.append("      signal ReadRawAttributes.attributeChanged("
-								+ (att.getName().hashCode() & 0xFFFF)
-								+ "U, (void *) &new_" + att.getName() + ");\n");
-				bufModFunctions.append("    }\n");
-				bufModFunctions.append("  }\n");
-				bufPersist.append("      case "
-						+ (att.getName().hashCode() & 0xFFFF) + "U:\n");
-				bufPersist.append("        " + att.getName() + " = new_"
-						+ att.getName() + ";\n");
-				bufPersist.append("        break;\n");
+				bufDecl.append("static struct ctimer att_" + att.getName()
+						+ "_timer;\n");
 			}
 
-			if (att.getValue().getType() == Value.Type.STATIC)
-				bufBooted
-						.append("    new_" + att.getName() + " = call " //$NON-NLS-2$
-								+ Strings.getString("Attributes.interface-set") + ".get_" + att.getName() //$NON-NLS-2$
-								+ "();\n");
+			if (att.getValue().getType() == Value.Type.EVENT) {
+				bufHeader.append("void set_" + att.getName() + "("
+						+ att.getType() + " new_value); /* TO CALL */\n");
 
-			bufDecl.append("  " + att.toString() + "\n"); //$NON-NLS-2$
+				bufSetFunctions.append("void set_" + att.getName() + "("
+						+ att.getType() + " new_value)\n");
+				bufSetFunctions.append("{\n");
+				bufSetFunctions.append("    " + att.getType()
+						+ " new_val = new_value;\n\n");
 
-			bufGetValue
-					.append("      case " + (att.getName().hashCode() & 0xFFFF) + "U:\n"); //$NON-NLS-2$
-			bufGetValue.append("        return (void *) &" + att.getName()
-					+ ";\n");
-			bufSetValue
-					.append("      case " + (att.getName().hashCode() & 0xFFFF) + "U:\n"); //$NON-NLS-2$
-			if (att.getValue().getType() == Value.Type.DYNAMIC) {
-				bufSetValue.append("        new_" + att.getName() + " = *(("
-						+ att.getType() + " *) value);\n");
-				bufSetValue
-						.append("        signal ReadRawAttributes.attributeChanged("
+				bufSetFunctions.append("    if (new_val != attribute_"
+						+ att.getName() + ")\n");
+				bufSetFunctions
+						.append("        generic_update("
 								+ (att.getName().hashCode() & 0xFFFF)
-								+ "U, (void *) &new_" + att.getName() + ");\n");
-			} else {
-				bufSetValue.append("        " + att.getName() + " = *(("
-						+ att.getType() + " *) value);\n");
-				bufSetValue
-						.append("        signal ReadRawAttributes.attributeChanged("
-								+ (att.getName().hashCode() & 0xFFFF)
-								+ "U, (void *) &" + att.getName() + ");\n");
+								+ ", new_val);\n");
+				bufSetFunctions.append("}\n\n");
 			}
-			bufSetValue.append("        break;\n");
+
+			bufGetValue.append("      case "
+					+ (att.getName().hashCode() & 0xFFFF) + ": /* "
+					+ att.getName() + " */\n");
+			if (att.getValue().getType() == Value.Type.CONSTANT)
+				bufGetValue.append("        *value = "
+						+ att.getValue().getValue() + ";\n");
+			else {
+				bufDecl.append(att.getType() + " attribute_" + att.getName()
+						+ ";\n");
+				bufGetValue.append("        *value = attribute_"
+						+ att.getName() + ";\n");
+			}
+			bufGetValue.append("        return 1;\n");
 		}
 	}
 
 	/**
 	 * Writes the attribute table to a buffer.
 	 * 
-	 * @param bufMod
+	 * @param bufCode
 	 *            The buffer to write code to.
-	 * @param bufInterf
-	 *            The buffer to write the interface to.
-	 * @param bufConfig
-	 *            The buffer to write the configuration to.
+	 * @param bufHeader
+	 *            TODO
 	 * @throws IOException
 	 *             When an error ocurred while writing to the buffer.
 	 */
-	protected void writeToBuffer(BufferedWriter bufMod,
-			BufferedWriter bufInterf, BufferedWriter bufConfig)
-			throws IOException {
+	protected void writeToBuffer(BufferedWriter bufCode,
+			BufferedWriter bufHeader) throws IOException {
 		StringBuffer bufDecl = new StringBuffer();
 		StringBuffer bufGetValue = new StringBuffer();
-		StringBuffer bufSetValue = new StringBuffer();
-		StringBuffer bufBooted = new StringBuffer();
-		StringBuffer bufInterface = new StringBuffer();
-		StringBuffer bufModFunctions = new StringBuffer();
-		StringBuffer bufUsesTimers = new StringBuffer();
-		StringBuffer bufTimerComponents = new StringBuffer();
-		StringBuffer bufTimerLinks = new StringBuffer();
-		StringBuffer bufPersist = new StringBuffer();
+		StringBuffer bufInit = new StringBuffer();
+		StringBuffer bufSetFunctions = new StringBuffer();
+		StringBuffer bufHeaderFile = new StringBuffer();
 
 		bufGetValue
-				.append("\n  command void * ReadRawAttributes.attributeValue(uint16_t hash)\n  {\n");
+				.append("int get_attribute(uint16_t hash, uint16_t *value)\n");
+		bufGetValue.append("{\n");
 		bufGetValue.append("    switch (hash) {\n");
+		bufGetValue.append("      case " + ("id".hashCode() & 0xFFFF)
+				+ ": /* id */\n");
 		bufGetValue
-				.append("      case " + (KW_ID.hashCode() & 0xFFFF) + "U:\n");
-		bufGetValue.append("        return (void *) &id;\n");
+				.append("        *value = (rimeaddr_node_addr.u8[1] << 8) + (rimeaddr_node_addr.u8[0]);\n");
+		bufGetValue.append("        return 1;\n");
 
-		bufPersist
-				.append("\n  command void ReadRawAttributes.persistAttribute(uint16_t hash)\n  {\n");
-		bufPersist.append("    switch (hash) {\n");
+		bufInit.append("void attributes_init()\n");
+		bufInit.append("{\n");
+		bufInit.append("    clock_time_t period;\n");
 
-		bufSetValue
-				.append("\n  event void " + Strings.getString("Attributes.interface-set") //$NON-NLS-2$
-						+ ".set_attribute(int hash, void *value)\n  {\n");
-		bufSetValue.append("    switch (hash) {\n");
-
-		writeData(bufDecl, bufGetValue, bufPersist, bufSetValue, bufInterface,
-				bufBooted, bufModFunctions, bufUsesTimers, bufTimerComponents,
-				bufTimerLinks);
-
-		bufPersist.append("    }\n");
-		bufPersist.append("  }\n");
+		writeData(bufDecl, bufGetValue, bufHeaderFile, bufInit, bufSetFunctions);
 
 		bufGetValue.append("    }\n");
-		bufGetValue.append("    return NULL;\n  }\n");
+		bufGetValue.append("    return 0;\n");
+		bufGetValue.append("}\n\n");
 
-		bufSetValue.append("    }\n");
-		bufSetValue.append("  }\n");
+		bufCode.append("#include \"rime.h\"\n");
+		bufCode.append("#include \"attributes.h\"\n");
+		bufCode.append("#include \"dice.h\"\n");
+		bufCode.append("#include \"view_manager.h\"\n");
+		bufCode.append("#include \"drickle.h\"\n\n");
 
-		printModuleHeader(bufMod, bufUsesTimers);
-		bufMod.append(bufDecl.toString());
-		bufMod.append("\n  event void Boot.booted()\n  {\n");
-		bufMod.append("    id = TOS_NODE_ID;\n");
-		bufMod.append(bufBooted.toString());
-		bufMod.append("  }\n");
-		bufMod.append(bufGetValue.toString());
-		bufMod.append(bufPersist.toString());
-		bufMod
-				.append("\n  command bool ReadRawAttributes.isKeyword(uint16_t hash)\n");
-		bufMod.append("  {\n");
-		bufMod.append("    switch (hash) {\n");
-		bufMod.append("      case " + (KW_ID.hashCode() & 0xFFFF) + "U:\n");
-		bufMod.append("        return TRUE;\n");
-		bufMod.append("    }\n");
-		bufMod.append("    return FALSE;\n");
-		bufMod.append("  }\n");
-		bufMod.append(bufSetValue.toString());
-		bufMod.append(bufModFunctions.toString());
-		printModuleFooter(bufMod);
+		bufCode.append(bufDecl);
+		bufCode.append("\n");
+		printModuleHeader(bufCode);
+		bufCode.append(bufSetFunctions);
+		bufCode.append(bufGetValue);
+		bufCode.append(bufInit);
+		printModuleFooter(bufCode);
 
-		printInterfaceHeader(bufInterf);
-		bufInterf.append(bufInterface.toString());
-		printInterfaceFooter(bufInterf);
+		bufHeader.append("#ifndef __ATTRIBUTES_H\n");
+		bufHeader.append("#define __ATTRIBUTES_H\n\n");
+		bufHeader.append(bufHeaderFile);
 
-		printConfiguration(bufConfig, bufTimerComponents.toString(),
-				bufTimerLinks.toString());
+		bufHeader.append("\n");
+		bufHeader.append("void attributes_init();\n\n");
+		bufHeader.append("extern int local_attribute_hashes["
+				+ data.values().size() + "];\n");
+		bufHeader.append("extern int local_attribute_no;\n");
+
+		bufHeader.append("#endif\n");
 	}
 }

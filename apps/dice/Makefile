@@ -10,5 +10,5 @@ all: dice
 CONTIKI = ../..
 include $(CONTIKI)/Makefile.include
 
-dice.$(TARGET): $(OBJECTDIR)/drickle.o $(OBJECTDIR)/view_manager.o $(OBJECTDIR)/attributes.o $(OBJECTDIR)/dummy_group.o $(OBJECTDIR)/history.o $(OBJECTDIR)/evaluation_manager.o $(OBJECTDIR)/monitor-data.o
+dice.$(TARGET): $(OBJECTDIR)/drickle.o $(OBJECTDIR)/view_manager.o $(OBJECTDIR)/attributes.o $(OBJECTDIR)/dummy_group.o $(OBJECTDIR)/history.o $(OBJECTDIR)/evaluation_manager.o $(OBJECTDIR)/monitor-data.o $(OBJECTDIR)/attributes_data.o
 

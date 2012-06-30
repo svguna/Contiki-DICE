@@ -18,7 +18,7 @@ package eu.guna.dice.attributes;
 		/** A dynamic value is obtained by periodically calling a function. */
 		DYNAMIC,
 		/** A static value is obtained by a single function call. */
-		STATIC;
+		EVENT;
 	}
 
 	/** The refresh period for dynamic attributes. */
@@ -35,7 +35,7 @@ package eu.guna.dice.attributes;
 	 * function call.
 	 */
 	protected Value() {
-		this.type = Type.STATIC;
+		this.type = Type.EVENT;
 	}
 
 	/**
@@ -86,7 +86,7 @@ package eu.guna.dice.attributes;
 	}
 
 	protected boolean isStatic() {
-		return type == Type.STATIC;
+		return type == Type.EVENT;
 	}
 
 	/*
