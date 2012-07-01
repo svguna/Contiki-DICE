@@ -294,13 +294,15 @@ public class Constraints {
 	 * 
 	 * @param constraintTable
 	 *            The constraints list.
+	 * @param outputDirectory
 	 * @throws IOException
 	 *             In case of error.
 	 * @throws QuantifierNotFoundException
 	 */
-	public static void writeCode(ConstraintTable constraintTable)
-			throws IOException, QuantifierNotFoundException {
-		String outFilename = Strings.getString("module-dir")
+	public static void writeCode(ConstraintTable constraintTable,
+			String outputDirectory) throws IOException,
+			QuantifierNotFoundException {
+		String outFilename = outputDirectory
 				+ Strings.getString("Constraints.constraint-output-file");
 		PrintStream out = new PrintStream(new File(outFilename));
 

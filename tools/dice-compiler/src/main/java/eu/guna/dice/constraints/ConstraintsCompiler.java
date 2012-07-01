@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 
@@ -46,37 +47,48 @@ public class ConstraintsCompiler {
 				.getString("Constraints.logger-configuration"));
 		boolean justPrint = args.length == 1 && args[0].equals("PRINT");
 
-		parse(Strings.getString("Constraints.constraint-input-file"), justPrint);
+		parse(Strings.getString("Constraints.constraint-input-file"),
+				(justPrint) ? null : Strings.getString("module-dir"));
 
 	}
 
-	public static void parse(String inputFile, boolean justPrint) {
+	private static void parse(CharStream stream, String outputDirectory) {
 		constraintParser parser;
 		try {
-			constraintLexer lexer = new constraintLexer(new ANTLRFileStream(
-					inputFile));
+			constraintLexer lexer = new constraintLexer(stream);
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			parser = new constraintParser(tokens);
 			parser.spec_list();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
 		} catch (RecognitionException e) {
 			e.printStackTrace();
 			return;
 		}
 		try {
-			if (justPrint)
+			if (outputDirectory == null)
 				Constraints.printCode(parser.getConstraintTable());
 			else
-				Constraints.writeCode(parser.getConstraintTable());
+				Constraints.writeCode(parser.getConstraintTable(),
+						outputDirectory);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.exit(-1);
 		} catch (QuantifierNotFoundException e) {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+	}
+
+	public static void parse(String inputFile, String outputDirectory) {
+		try {
+			parse(new ANTLRFileStream(inputFile), outputDirectory);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
+
+	public static void parseString(String input, String outputDirectory) {
+		parse(new ANTLRStringStream(input), outputDirectory);
 	}
 
 	public ConstraintsCompiler(String constraintText)

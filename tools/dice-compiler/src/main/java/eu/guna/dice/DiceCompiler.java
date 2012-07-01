@@ -29,6 +29,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 import eu.guna.dice.attributes.AttributesCompiler;
+import eu.guna.dice.common.Strings;
 import eu.guna.dice.constraints.ConstraintsCompiler;
 
 /**
@@ -76,10 +77,11 @@ public class DiceCompiler {
 			diceCompiler.parseAttributes = false;
 
 		if (diceCompiler.parseAttributes)
-			AttributesCompiler.parse(diceCompiler.fileName + ".att");
+			AttributesCompiler.parse(diceCompiler.fileName + ".att",
+					Strings.getString("module-dir"));
 
 		if (diceCompiler.parseConstraints)
 			ConstraintsCompiler.parse(diceCompiler.fileName + ".dc",
-					diceCompiler.justPrint);
+					Strings.getString("module-dir"));
 	}
 }

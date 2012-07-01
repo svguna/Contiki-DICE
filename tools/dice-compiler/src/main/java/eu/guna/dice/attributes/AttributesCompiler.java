@@ -47,7 +47,8 @@ public class AttributesCompiler {
 	public static void main(String[] args) {
 		LoggerConfiguration.setupLogging(Strings
 				.getString("Attributes.logger-configuration"));
-		parse(Strings.getString("Attributes.attribute-file"));
+		parse(Strings.getString("Attributes.attribute-file"),
+				Strings.getString("module-dir"));
 	}
 
 	/**
@@ -57,7 +58,7 @@ public class AttributesCompiler {
 	 * @param inputFile
 	 *            the attribute input file
 	 */
-	public static void parse(String inputFile) {
+	public static void parse(String inputFile, String outputDirectory) {
 		attributeParser parser;
 		try {
 			attributeLexer lexer = new attributeLexer(new ANTLRFileStream(
@@ -75,9 +76,9 @@ public class AttributesCompiler {
 		AttributeTable attTable = parser.getAttributeTable();
 		try {
 
-			String outName = Strings.getString("module-dir")
+			String outName = outputDirectory
 					+ Strings.getString("Attributes.attribute-output-file");
-			String outHeaderName = Strings.getString("module-dir")
+			String outHeaderName = outputDirectory
 					+ Strings.getString("Attributes.attribute-output-header");
 
 			BufferedWriter bufCode = new BufferedWriter(new FileWriter(outName));
