@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Contiki-DICE : Port of the DICE system on the Contiki operating system" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Contiki-DICE</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/svguna/Contiki-DICE">View on GitHub</a>
+
+          <h1 id="project_title">Contiki-DICE</h1>
+          <h2 id="project_tagline">Port of the DICE system on the Contiki operating system</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/svguna/Contiki-DICE/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/svguna/Contiki-DICE/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>DICE is an open source monitoring system for global invariants running on
+resource-constrained networked embedded systems developed by Stefan Guna.</p>
+
+<p>DICE provides a simple, declarative language to express the invariants to be
+monitored. The network is tasked as a whole and together monitor invariants
+such as:
+    forall m, n: temp@m - temp@n &lt; 10
+    forall m, n: temp@m &gt; 25 -&gt; fan_active@n = TRUE
+where temp@m references the temperature at node m. The invariant building blocks
+are local node state (e.g., NODE_ATTRIBUTE@quantifier) that are combined to form
+global predicates expressed at network level.</p>
+
+<p>To get started:
+1. Edit ../../tools/dice-compiler/attributes.att and declare node attributes.
+2. Edit ../../tools/dice-compiler/constraints.dc to decalare the invariant to be
+monitored.
+3. Build the compiler, i.e., mvn compile.
+4. Run the eu.guna.dice.DiceCompiler on the two files.
+5. Edit attributes_data.c to insert the code handling attribute values. Have a
+look at attributes.h to identify the code you need to write.
+6. TODO Add violation handling code.
+7. Compile and run!</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Contiki-DICE maintained by <a href="https://github.com/svguna">svguna</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
