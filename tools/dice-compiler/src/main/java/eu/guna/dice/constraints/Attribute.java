@@ -44,6 +44,8 @@ public class Attribute {
 	/** The hash of the attribute name. */
 	private int hash;
 
+	private boolean makesenseAttribute;
+
 	/** The attribute name. */
 	private String name;
 
@@ -69,6 +71,7 @@ public class Attribute {
 		name = other.name;
 		quantifier = other.quantifier;
 		quantifierString = other.quantifierString;
+		makesenseAttribute = other.makesenseAttribute;
 	}
 
 	/**
@@ -82,6 +85,16 @@ public class Attribute {
 	protected Attribute(String att_name, String att_quantifier) {
 		this.hash = att_name.hashCode() & 0xFFFF;
 		this.name = att_name;
+		this.quantifierString = att_quantifier;
+		makesenseAttribute = false;
+	}
+
+	protected Attribute(String mplClass, String mplVariable, String mplGetter,
+			String att_quantifier) {
+		String tmp = mplClass + "." + mplVariable + "." + mplGetter + "()";
+		this.hash = tmp.hashCode() & 0xFFFF;
+		this.name = tmp;
+		makesenseAttribute = true;
 		this.quantifierString = att_quantifier;
 	}
 
@@ -178,6 +191,10 @@ public class Attribute {
 	 */
 	protected Pattern getScopingPattern(int implicationId, int boolNodeId) {
 		return new Pattern(this, quantifier, implicationId, boolNodeId);
+	}
+
+	public boolean isMakesenseAttribute() {
+		return makesenseAttribute;
 	}
 
 	/**

@@ -32,7 +32,9 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import eu.guna.dice.AttributeIntegrator;
 import eu.guna.dice.common.Strings;
+import eu.guna.dice.constraints.Attribute;
 import eu.guna.dice.constraints.BoolNode;
 import eu.guna.dice.constraints.ConstraintTable;
 import eu.guna.dice.constraints.Pattern;
@@ -280,13 +282,118 @@ public class Constraints {
 	 * 
 	 * @param constraintTable
 	 *            The constraints list.
+	 * @param attIntegrator
 	 * @throws IOException
 	 *             In case of error.
 	 * @throws QuantifierNotFoundException
 	 */
-	public static void printCode(ConstraintTable constraintTable)
+	public static void printCode(ConstraintTable constraintTable,
+			AttributeIntegrator attIntegrator)
 			throws QuantifierNotFoundException, IOException {
-		writeToBuffer(constraintTable, System.out);
+		PrintStream attOut = (attIntegrator != null) ? System.out : null;
+		writeToBuffer(constraintTable, System.out, attOut, attIntegrator);
+	}
+
+	private static void writeAttributesToBuffer(BoolNode constraint, int i,
+			PrintStream out, AttributeIntegrator attIntegrator) {
+		Set<Attribute> attributes = constraint.getAttributes();
+		Set<String> includes = new HashSet<String>();
+
+		for (Attribute att : attributes) {
+			if (!att.isMakesenseAttribute()) {
+				log.error(att + " is not a makeSense attribute!");
+				return;
+			}
+			String tmp = attIntegrator.getAttributeValueHeaders(att.getName());
+			String lines[] = tmp.split("\n");
+			for (String include : lines)
+				includes.add(include);
+		}
+
+		out.println(Strings.getString("file-header"));
+
+		out.println("#include \"rime.h\"");
+		out.println("#include \"attributes.h\"");
+		out.println("#include \"dice.h\"");
+		out.println("#include \"view_manager.h\"");
+		out.println("#include \"drickle.h\"");
+		out.println("");
+		for (String include : includes)
+			out.println(include);
+		out.println("");
+
+		out.println("int local_attribute_hashes[] = {");
+		for (Attribute att : attributes)
+			out.println("\t" + att.getHash() + ", /* " + att.getName() + " */");
+		out.println("};");
+		out.println("int local_attribute_no = " + attributes.size() + ";");
+
+		out.println("static struct ctimer att_refresh_timer;");
+
+		for (Attribute att : attributes)
+			out.println("static uint16_t attribute" + att.getHash() + "; /* "
+					+ att.getName() + " */");
+		out.println("");
+
+		out.println("int get_attribute(uint16_t hash, uint16_t *value)");
+		out.println("{");
+		out.println("\tswitch (hash) {");
+		for (Attribute att : attributes) {
+			out.println("\t\tcase " + att.getHash() + ": /* " + att.getName()
+					+ " */");
+			out.println("\t\t\t*value = attribute" + att.getHash() + ";");
+			out.println("\t\t\treturn 1;");
+		}
+		out.println("\t}");
+		out.println("\treturn 0;");
+		out.println("}\n");
+
+		out.println("static void generic_update(uint16_t attr, int new_val)");
+		out.println("{");
+		out.println("\tint updated = 0;");
+		out.println("\tview_entry_t entry;");
+		out.println("");
+		out.println("\tentry.ts = clock_time();");
+		out.println("\tentry.val = new_val;");
+		out.println("\tentry.attr = attr;");
+		out.println("\tmemcpy(&entry.src, &rimeaddr_node_addr, sizeof(rimeaddr_t));");
+		out.println("");
+		out.println("\tif (local_disjunctions_refresh()) {");
+		out.println("\t\tupdated = 1;");
+		out.println("\t\tprint_viewt1_msg(\"T1 ar\", &local_view_t1);");
+		out.println("\t}");
+		out.println("\tprint_entry_msg(\"attribute refresh \", &entry);");
+		out.println("\tif (push_entry(&entry)) {");
+		out.println("\t\tprint_view_msg(\"after refresh \", &local_view);");
+		out.println("\t\tupdated = 1;");
+		out.println("\t}");
+		out.println("\tif (updated)");
+		out.println("\t\tdrickle_reset();");
+		out.println("}");
+		out.println("");
+
+		out.println("static void refresh_attributes(void *data)");
+		out.println("{");
+		out.println("\tuint16_t new_val;\n");
+		for (Attribute att : attributes) {
+			out.println("\tnew_val = "
+					+ attIntegrator.getAttributeValueCode(att.getName())
+					+ "; /* " + att.getName() + " */");
+			out.println("\tif (new_val != attribute" + att.getHash() + ")");
+			out.println("\t\tgeneric_update(" + att.getHash() + ", new_val);");
+			out.println("\tattribute" + att.getHash() + " = new_val;");
+			out.println("");
+		}
+
+		out.println("\tctimer_reset(&att_refresh_timer);");
+		out.println("}");
+		out.println("");
+
+		out.println("void attributes_init()");
+		out.println("{");
+		out.println("\tclock_time_t period = 2 * CLOCK_SECOND;");
+		out.println("\tctimer_set(&att_refresh_timer, period, &refresh_attributes, NULL);");
+		out.println("}\n");
 	}
 
 	/**
@@ -295,13 +402,14 @@ public class Constraints {
 	 * @param constraintTable
 	 *            The constraints list.
 	 * @param outputDirectory
+	 * @param attIntegrator
 	 * @throws IOException
 	 *             In case of error.
 	 * @throws QuantifierNotFoundException
 	 */
 	public static void writeCode(ConstraintTable constraintTable,
-			String outputDirectory) throws IOException,
-			QuantifierNotFoundException {
+			String outputDirectory, AttributeIntegrator attIntegrator)
+			throws IOException, QuantifierNotFoundException {
 		String outFilename = outputDirectory
 				+ System.getProperty("file.separator")
 				+ Strings.getString("Constraints.constraint-output-file");
@@ -309,13 +417,23 @@ public class Constraints {
 
 		log.info("Generating " + outFilename);
 
-		writeToBuffer(constraintTable, out);
+		PrintStream attOut = null;
+		if (attIntegrator != null) {
+			outFilename = outputDirectory
+					+ System.getProperty("file.separator")
+					+ Strings.getString("Attributes.attribute-output-file");
+			attOut = new PrintStream(new File(outFilename));
+		}
+
+		writeToBuffer(constraintTable, out, attOut, attIntegrator);
 
 		out.close();
 	}
 
 	private static void writeToBuffer(ConstraintTable constraintTable,
-			PrintStream out) throws IOException, QuantifierNotFoundException {
+			PrintStream out, PrintStream attOut,
+			AttributeIntegrator attIntegrator) throws IOException,
+			QuantifierNotFoundException {
 		out.println(Strings.getString("file-header"));
 		out.print(getHeader());
 
@@ -324,6 +442,9 @@ public class Constraints {
 		log.debug("Is type 2: " + isType2);
 		constraint.getQuantifiers();
 		String funcConstraint = null, funcPattern = null, funcMapping = null;
+
+		if (attOut != null)
+			writeAttributesToBuffer(constraint, 0, attOut, attIntegrator);
 
 		if (isType2) {
 			funcConstraint = getConstraint(constraint, 0);

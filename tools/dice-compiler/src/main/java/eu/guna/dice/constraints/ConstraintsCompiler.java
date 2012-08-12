@@ -28,6 +28,7 @@ import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 
+import eu.guna.dice.AttributeIntegrator;
 import eu.guna.dice.common.LoggerConfiguration;
 import eu.guna.dice.common.Strings;
 import eu.guna.dice.constraints.exceptions.QuantifierNotFoundException;
@@ -45,6 +46,22 @@ public class ConstraintsCompiler {
 	public static void main(String[] args) {
 		LoggerConfiguration.setupLogging(Strings
 				.getString("Constraints.logger-configuration"));
+		if (args.length == 1 && args[0].equals("MAKESENSE")) {
+			parse(Strings.getString("Constraints.constraint-input-file"), null,
+					new AttributeIntegrator() {
+						@Override
+						public String getAttributeValueCode(String attributeName) {
+							return attributeName;
+						}
+
+						@Override
+						public String getAttributeValueHeaders(
+								String attributeName) {
+							return attributeName;
+						}
+					});
+			return;
+		}
 		boolean justPrint = args.length == 1 && args[0].equals("PRINT");
 
 		parse(Strings.getString("Constraints.constraint-input-file"),
@@ -52,7 +69,8 @@ public class ConstraintsCompiler {
 
 	}
 
-	private static void parse(CharStream stream, String outputDirectory) {
+	private static void parse(CharStream stream, String outputDirectory,
+			AttributeIntegrator attIntegrator) {
 		constraintParser parser;
 		try {
 			constraintLexer lexer = new constraintLexer(stream);
@@ -65,10 +83,11 @@ public class ConstraintsCompiler {
 		}
 		try {
 			if (outputDirectory == null)
-				Constraints.printCode(parser.getConstraintTable());
+				Constraints.printCode(parser.getConstraintTable(),
+						attIntegrator);
 			else
 				Constraints.writeCode(parser.getConstraintTable(),
-						outputDirectory);
+						outputDirectory, attIntegrator);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -80,7 +99,18 @@ public class ConstraintsCompiler {
 
 	public static void parse(String inputFile, String outputDirectory) {
 		try {
-			parse(new ANTLRFileStream(inputFile), outputDirectory);
+			parse(new ANTLRFileStream(inputFile), outputDirectory, null);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
+
+	public static void parse(String inputFile, String outputDirectory,
+			AttributeIntegrator attIntegrator) {
+		try {
+			parse(new ANTLRFileStream(inputFile), outputDirectory,
+					attIntegrator);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -88,7 +118,12 @@ public class ConstraintsCompiler {
 	}
 
 	public static void parseString(String input, String outputDirectory) {
-		parse(new ANTLRStringStream(input), outputDirectory);
+		parse(new ANTLRStringStream(input), outputDirectory, null);
+	}
+
+	public static void parseString(String input, String outputDirectory,
+			AttributeIntegrator attIntegrator) {
+		parse(new ANTLRStringStream(input), outputDirectory, attIntegrator);
 	}
 
 	public ConstraintsCompiler(String constraintText)

@@ -127,6 +127,8 @@ comparison_op returns [ComparisonOperator op]
 attribute returns [Attribute att]
 	:	n=IDENTIFIER '@' q=IDENTIFIER
 	{ $att = new Attribute($n.text, $q.text); }
+	|	p=IDENTIFIER '.' v=IDENTIFIER '.' f=IDENTIFIER '(' ')' '@' q=IDENTIFIER
+	{ $att = new Attribute($p.text, $v.text, $f.text, $q.text); }
 	;
 
 expr returns [MathNode node]

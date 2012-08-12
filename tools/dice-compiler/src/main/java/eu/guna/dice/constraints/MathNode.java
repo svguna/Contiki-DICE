@@ -21,6 +21,7 @@
 package eu.guna.dice.constraints;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -903,6 +904,28 @@ public class MathNode {
 			iterator = iterator.leftChild;
 		}
 
+	}
+
+	public Set<Attribute> getAttributes() {
+		Set<Attribute> result = new HashSet<Attribute>();
+		switch (type) {
+		case LEAF:
+			if (value.getType().equals(Value.Type.ATTRIBUTE))
+				result.add(value.getAttribute());
+			break;
+		case NODE:
+			result.addAll(leftChild.getAttributes());
+			for (Attribute right : rightChild.getAttributes()) {
+				boolean found = false;
+				for (Attribute left : result)
+					if (left.getHash() == right.getHash())
+						found = true;
+				if (!found)
+					result.add(right);
+			}
+			break;
+		}
+		return result;
 	}
 
 	private int getCoefficient() throws InvalidTypeException {

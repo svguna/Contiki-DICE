@@ -303,6 +303,41 @@ public class BoolNode {
 		rightChild.extractDisjunctions(result);
 	}
 
+	public Set<Attribute> getAttributes() {
+		Set<Attribute> result = new HashSet<Attribute>();
+
+		switch (type) {
+		case LEAF:
+			if (value.getType().equals(Value.Type.ATTRIBUTE))
+				result.add(value.getAttribute());
+			break;
+		case LEAF_MATH:
+			result.addAll(leftMathChild.getAttributes());
+			for (Attribute right : rightMathChild.getAttributes()) {
+				boolean found = false;
+				for (Attribute left : result)
+					if (left.getHash() == right.getHash())
+						found = true;
+				if (!found)
+					result.add(right);
+			}
+			break;
+		case NODE:
+			result.addAll(leftChild.getAttributes());
+			for (Attribute right : rightChild.getAttributes()) {
+				boolean found = false;
+				for (Attribute left : result)
+					if (left.getHash() == right.getHash())
+						found = true;
+				if (!found)
+					result.add(right);
+			}
+			break;
+		}
+
+		return result;
+	}
+
 	/**
 	 * Gets the boolean value of the node. Only valid if the node is a constant.
 	 * 
