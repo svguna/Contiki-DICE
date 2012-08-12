@@ -77,8 +77,10 @@ public class AttributesCompiler {
 		try {
 
 			String outName = outputDirectory
+					+ System.getProperty("file.separator")
 					+ Strings.getString("Attributes.attribute-output-file");
 			String outHeaderName = outputDirectory
+					+ System.getProperty("file.separator")
 					+ Strings.getString("Attributes.attribute-output-header");
 
 			BufferedWriter bufCode = new BufferedWriter(new FileWriter(outName));

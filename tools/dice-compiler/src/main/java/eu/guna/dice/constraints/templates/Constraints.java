@@ -303,6 +303,7 @@ public class Constraints {
 			String outputDirectory) throws IOException,
 			QuantifierNotFoundException {
 		String outFilename = outputDirectory
+				+ System.getProperty("file.separator")
 				+ Strings.getString("Constraints.constraint-output-file");
 		PrintStream out = new PrintStream(new File(outFilename));
 
