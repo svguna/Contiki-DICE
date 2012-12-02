@@ -4,7 +4,7 @@
   <head>
     <meta charset='utf-8' />
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Contiki-DICE : Port of the DICE system on the Contiki operating system" />
+    <meta name="description" content="Contiki-DICE: Port of the DICE system for Contiki OS" />
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
@@ -12,14 +12,27 @@
   </head>
 
   <body>
+      <script type="text/javascript">
 
+          var _gaq = _gaq || [];
+          _gaq.push(['_setAccount', 'UA-3358196-3']);
+          _gaq.push(['_setDomainName', 'stefanguna.info']);
+          _gaq.push(['_trackPageview']);
+
+          (function() {
+           var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+           ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+           var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+           })();
+
+       </script>
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
           <a id="forkme_banner" href="https://github.com/svguna/Contiki-DICE">View on GitHub</a>
 
           <h1 id="project_title">Contiki-DICE</h1>
-          <h2 id="project_tagline">Port of the DICE system on the Contiki operating system</h2>
+          <h2 id="project_tagline">Port of the DICE system for Contiki OS</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/svguna/Contiki-DICE/zipball/master">Download this project as a .zip file</a>
@@ -31,23 +44,25 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <p>DICE is an open source monitoring system for global invariants running on
-resource-constrained networked embedded systems developed by Stefan Guna.</p>
+        <p>DICE is an open source monitoring system for global invariants
+        running on resource-constrained networked embedded systems developed by
+        Ștefan Gună.</p>
 
-<p>DICE provides a simple, declarative language to express the invariants to be
-monitored. The network is tasked as a whole and together monitor invariants
-such as:</p>
-
+<p>DICE provides a simple, declarative language to express the distributed
+invariants to be monitored by a wireless sensor network. The network is tasked
+as a whole and together monitor invariants such as:</p>
 <ul>
 <li><code>forall m, n: temp@m - temp@n &lt; 10</code></li>
 <li>
 <code>forall m, n: temp@m &gt; 25 -&gt; fan_active@n = TRUE</code>
+</ul>
 where temp@m references the temperature at node m. The invariant building blocks
 are local node state (e.g., NODE_ATTRIBUTE@quantifier) that are combined to form
 global predicates expressed at network level.</li>
-</ul><p>To get started:</p>
 
+<p>To get started:</p>
 <ol>
+    <li>Download the source code.
 <li>Edit ../../tools/dice-compiler/attributes.att and declare node attributes.</li>
 <li>Edit ../../tools/dice-compiler/constraints.dc to decalare the invariant to be
 monitored.</li>
@@ -64,8 +79,7 @@ look at attributes.h to identify the code you need to write.</li>
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">Contiki-DICE maintained by <a href="https://github.com/svguna">svguna</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+        <p class="copyright">Contiki-DICE maintained by <a href="http://www.stefanguna.info">Ștefan Gună</a></p>
       </footer>
     </div>
 
