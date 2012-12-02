@@ -4,7 +4,7 @@
   <head>
     <meta charset='utf-8' />
     <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Contiki-DICE : Port of the DICE system for the Contiki operating system" />
+    <meta name="description" content="Contiki-DICE : Port of the DICE system on the Contiki operating system" />
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
@@ -19,7 +19,8 @@
           <a id="forkme_banner" href="https://github.com/svguna/Contiki-DICE">View on GitHub</a>
 
           <h1 id="project_title">Contiki-DICE</h1>
-          <h2 id="project_tagline">Port of the DICE system for the Contiki operating system</h2>
+          <h2 id="project_tagline">Port of the DICE system on the Contiki operating system</h2>
+
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/svguna/Contiki-DICE/zipball/master">Download this project as a .zip file</a>
               <a class="tar_download_link" href="https://github.com/svguna/Contiki-DICE/tarball/master">Download this project as a tar.gz file</a>
@@ -35,35 +36,40 @@ resource-constrained networked embedded systems developed by Stefan Guna.</p>
 
 <p>DICE provides a simple, declarative language to express the invariants to be
 monitored. The network is tasked as a whole and together monitor invariants
-such as:
+such as:</p>
+
 <ul>
-    <li><code>forall m, n: temp@m - temp@n &lt; 10</code>
-    <li><code>forall m, n: temp@m &gt; 25 -&gt; fan_active@n = TRUE</code>
-</ul>
+<li><code>forall m, n: temp@m - temp@n &lt; 10</code></li>
+<li>
+<code>forall m, n: temp@m &gt; 25 -&gt; fan_active@n = TRUE</code>
 where temp@m references the temperature at node m. The invariant building blocks
 are local node state (e.g., NODE_ATTRIBUTE@quantifier) that are combined to form
-global predicates expressed at network level.</p>
+global predicates expressed at network level.</li>
+</ul><p>To get started:</p>
 
-<p>To get started:
 <ol>
-    <li>Edit "../../tools/dice-compiler/attributes.att" and declare node
-    attributes.
-    <li>Edit "../../tools/dice-compiler/constraints.dc" to decalare the invariant
-    to be monitored.
-    <li>Build the compiler, i.e., <code>mvn compile</code>.
-    <li>Run the "eu.guna.dice.DiceCompiler" class on the two files.
-    <li>Edit "attributes_data.c" to insert the code handling attribute values.
-    Have a look at "attributes.h' to identify the code you need to write.
-    <li><strong>TODO</strong> Add violation handling code.
-    <li>Compile and run!</ol></p>
+<li>Edit ../../tools/dice-compiler/attributes.att and declare node attributes.</li>
+<li>Edit ../../tools/dice-compiler/constraints.dc to decalare the invariant to be
+monitored.</li>
+<li>Build the compiler, i.e., mvn compile.</li>
+<li>Run the eu.guna.dice.DiceCompiler class on the two files.</li>
+<li>Edit attributes_data.c to insert the code handling attribute values. Have a
+look at attributes.h to identify the code you need to write.</li>
+<li>TODO Add violation handling code.</li>
+<li>Compile and run!</li>
+</ol>
       </section>
     </div>
 
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">Contiki-DICE maintained by <a href="http://www.stefanguna.info">Stefan Guna</a></p>
+        <p class="copyright">Contiki-DICE maintained by <a href="https://github.com/svguna">svguna</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
+
+    
+
   </body>
 </html>
