@@ -301,7 +301,7 @@ public class Constraints {
 
 		for (Attribute att : attributes) {
 			if (!att.isMakesenseAttribute()) {
-				log.error(att + " is not a makeSense attribute!");
+				System.err.println(att + " is not a makeSense attribute!");
 				return;
 			}
 			String tmp = attIntegrator.getAttributeValueHeaders(att.getName());
@@ -415,7 +415,7 @@ public class Constraints {
 				+ Strings.getString("Constraints.constraint-output-file");
 		PrintStream out = new PrintStream(new File(outFilename));
 
-		log.info("Generating " + outFilename);
+		System.out.println("Generating " + outFilename);
 
 		PrintStream attOut = null;
 		if (attIntegrator != null) {
@@ -423,11 +423,14 @@ public class Constraints {
 					+ System.getProperty("file.separator")
 					+ Strings.getString("Attributes.attribute-output-file");
 			attOut = new PrintStream(new File(outFilename));
+			System.out.println("Generating " + outFilename);
+
 		}
 
 		writeToBuffer(constraintTable, out, attOut, attIntegrator);
 
 		out.close();
+		attOut.close();
 	}
 
 	private static void writeToBuffer(ConstraintTable constraintTable,
