@@ -430,7 +430,8 @@ public class Constraints {
 		writeToBuffer(constraintTable, out, attOut, attIntegrator);
 
 		out.close();
-		attOut.close();
+		if (attOut != null)
+			attOut.close();
 	}
 
 	private static void writeToBuffer(ConstraintTable constraintTable,

@@ -1,1 +1,2 @@
-constraint {any m, n: gigi@m  > 71] }
+constraint {any m, n: gigi@m - gigi@n  > 71 }
+
