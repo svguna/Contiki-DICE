@@ -221,6 +221,7 @@ class AttributeTable {
 
 		bufHeader.append("#ifndef __ATTRIBUTES_H\n");
 		bufHeader.append("#define __ATTRIBUTES_H\n\n");
+		bufHeader.append("#include \"rime.h\"\n\n");
 		bufHeader.append(bufHeaderFile);
 
 		bufHeader.append("\n");
